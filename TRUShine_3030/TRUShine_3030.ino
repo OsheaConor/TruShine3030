@@ -30,6 +30,15 @@ void loop()
   
 }
 
+/* Utils */
+
+// Val kann nicht kleiner als lowerBounds oder höher als topBounds werden
+float clamp(float val, float lowerBounds, float topBounds) {
+  if (val < lowerBounds) return lowerBounds;
+  else if (val > topBounds) return topBounds;
+  else return val;
+}
+
 /* CONSOLE Input Logic */
 /* Muss zu USB oder anderem umgeändert werden! */
 
@@ -69,27 +78,33 @@ void moveSteps(int steps, int stepPin, int dirPin, bool reverse) {
 
 // coord: Range 0 too 1
 void moveX(float coord) {
-
+  moveXRelative((coord - positionX));
+  positionX = coord;
 }
 
 // If the offset exceeds the bounds of the plate, ie. coords > 1, it will move to the bounds of the plate.
 // Input can be negative to move in -x direction.
 void moveXRelative(float offset) {
+  offset = clamp((positionX + offset), 0, 1);
   int steps = X_STEP_COUNT * offset;
   bool reverse = (steps < 0);
 
   moveSteps(abs(steps), X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, reverse);
+  positionX += offset;
 }
 
 void moveY(float coord) {
-
+  moveYRelative((coord - positionY));
+  positionY = coord;
 }
 
 void moveYRelative(float offset) {
+  offset = clamp((positionY + offset), 0, 1);
   int steps = Y_STEP_COUNT * offset;
   bool reverse = (steps < 0);
 
   moveSteps(abs(steps), Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, reverse);
+  positionY += offset;
 }
 
 /* Home Logic */
