@@ -1,5 +1,5 @@
 #define X_STEP_COUNT 800
-#define Y_STEP_COUNT 400
+#define Z_STEP_COUNT 400
 // Fiktive Werte!
 
 #define MOTOR_STEP_TIME 200
@@ -8,11 +8,15 @@
 
 #define X__MOTOR_DIR_PIN 19
 #define X_MOTOR_STEP_PIN 21
-#define Y_MOTOR_DIR_PIN 5
-#define Y_MOTOR_STEP_PIN 18
+#define Z_MOTOR_DIR_PIN 5
+#define Z_MOTOR_STEP_PIN 18
+#define DRILL_MOTOR_STEP_PIN 17
+#define DRILL_MOTOR_DIR_PIN  15
+#define DRILL_MOTOR_POWER_PIN 4
 
 #define X_SENSOR 34
-#define Y_SENSOR 35
+#define Z_SENSOR 35
+#define DRILL_SENSOR 32
 
 static float positionX = 0.0f;
 static float positionZ = 0.0f;
@@ -21,9 +25,9 @@ static bool drillLowered = false;
 void setup()
 {
   pinMode(X_MOTOR_STEP_PIN, OUTPUT);
-  pinMode(Y_MOTOR_STEP_PIN, OUTPUT);
+  pinMode(Z_MOTOR_STEP_PIN, OUTPUT);
   pinMode(X_SENSOR, INPUT);
-  pinMode(Y_SENSOR, INPUT);
+  pinMode(Z_SENSOR, INPUT);
 
   Serial.begin(115200);
 }
@@ -78,6 +82,11 @@ String getUserNameFromConsole() {
 /* Movement Logic */
 // =================
 
+void stopMove() {
+  digitalWrite(X_MOTOR_STEP_PIN, LOW);
+  digitalWrite(Z_MOTOR_STEP_PIN, LOW);
+}
+
 void moveSteps(int steps, int stepPin, int dirPin, bool reverse) {
   if (reverse) {
     digitalWrite(dirPing, HIGH);
@@ -111,18 +120,36 @@ void moveXRelative(float offset) {
   positionX += offset;
 }
 
-void moveY(float coord) {
-  moveYRelative((coord - positionY));
-  positionY = coord;
+void moveZ(float coord) {
+  moveYRelative((coord - positionZ));
+  positionZ = coord;
 }
 
-void moveYRelative(float offset) {
-  offset = clamp((positionY + offset), 0, 1);
-  int steps = Y_STEP_COUNT * offset;
+void moveZRelative(float offset) {
+  offset = clamp((positionZ + offset), 0, 1);
+  int steps = Z_STEP_COUNT * offset;
   bool reverse = (steps < 0);
 
-  moveSteps(abs(steps), Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, reverse);
-  positionY += offset;
+  moveSteps(abs(steps), Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN, reverse);
+  positionZ += offset;
+}
+
+// =====================
+/* Drillhead Movement */
+// =====================
+
+void stopDrill() {
+  stopMove();
+  digitalWrite(DRILL_MOTOR_POWER_PIN, LOW);
+
+  // Weird workaround
+  calibrateDrillAxis();
+  drillLowered = false;
+}
+
+void startDrill() {
+  // Insert drive down logic
+  drillLowered = true;
 }
 
 // =============
@@ -130,8 +157,11 @@ void moveYRelative(float offset) {
 // =============
 
 void gotoHome() {
+  stopDrill();
+
   calibrateXAxis();
-  calibrateYAxis();
+  calibrateZAxis();
+  calibrateDrillAxis();
 }
 
 void calibrateXAxis() {
@@ -142,12 +172,20 @@ void calibrateXAxis() {
   moveFromSensor(X_MOTOR_STEP_PIN, X__MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
 }
 
-void calibrateYAxis() {
+void calibrateZAxis() {
+  // Definitely didn't copy paste it
+  moveToSensor(Z_MOTOR_STEP_PIN, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveToSensor(Z_MOTOR_STEP_PIN, Z_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveFromSensor(Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN, Z_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+}
+
+void calibrateDrillAxis() {
   // Definitely didn't copy paste it... I would never!
-  moveToSensor(Y_MOTOR_STEP_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(Y_MOTOR_STEP_PIN, Y__MOTOR_DIR_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(Y_MOTOR_STEP_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
-  moveFromSensor(Y_MOTOR_STEP_PIN, Y__MOTOR_DIR_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveToSensor(DRILL_MOTOR_STEP_PIN, DRILL_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(DRILL_MOTOR_STEP_PIN, DRILL_MOTOR_DIR_PIN, DRILL_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveToSensor(DRILL_MOTOR_STEP_PIN, DRILL_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveFromSensor(DRILL_MOTOR_STEP_PIN, DRILL_MOTOR_DIR_PIN, DRILL_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
 }
 
 void moveToSensor(int motorPin, int sensorPin, int speed) {
