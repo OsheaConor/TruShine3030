@@ -180,8 +180,8 @@ void calibrateXAxis() {
   // Move to sensor; Move away; Move towards... slower; Move away... slower
   moveToSensor(X_MOTOR_STEP_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME);
   moveFromSensor(X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(X_MOTOR_STEP_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
-  moveFromSensor(X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveToSensor(X_MOTOR_STEP_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
 }
 
 void calibrateZAxis() {
