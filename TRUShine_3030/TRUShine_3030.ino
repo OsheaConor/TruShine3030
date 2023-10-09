@@ -4,19 +4,21 @@
 
 #define MOTOR_STEP_TIME 200
 #define MOTOR_SLOW_STEP_TIME 800
+#define MOTOR_SLOW_STEP_FACTOR 2
 // Zahlen müssen nochmal überarbeitet werden!
+// MOTOR_SLOW_STEP_FACTOR besagt, wie viel langsamer der Motor sich bewegen muss, wenn er beim Kalibrieren von dem Schalter weg fährt.
 
-#define X__MOTOR_DIR_PIN 19
+#define X_MOTOR_DIR_PIN 19
 #define X_MOTOR_STEP_PIN 21
+#define Y_MOTOR_DIR_PIN 15
+#define Y_MOTOR_STEP_PIN 17
 #define Z_MOTOR_DIR_PIN 5
 #define Z_MOTOR_STEP_PIN 18
-#define DRILL_MOTOR_STEP_PIN 17
-#define DRILL_MOTOR_DIR_PIN  15
 #define DRILL_MOTOR_POWER_PIN 4
 
 #define X_SENSOR 34
 #define Z_SENSOR 35
-#define DRILL_SENSOR 32
+#define Y_SENSOR 32
 
 static float positionX = 0.0f;
 static float positionZ = 0.0f;
@@ -25,8 +27,16 @@ static bool drillLowered = false;
 void setup()
 {
   pinMode(X_MOTOR_STEP_PIN, OUTPUT);
+  pinMode(X_MOTOR_DIR_PIN, OUTPUT);
+  pinMode(Y_MOTOR_STEP_PIN, OUTPUT);
+  pinMode(Y_MOTOR_DIR_PIN, OUTPUT);
   pinMode(Z_MOTOR_STEP_PIN, OUTPUT);
+  pinMode(Z_MOTOR_DIR_PIN, OUTPUT);
+
+  pinMode(DRILL_MOTOR_POWER_PIN, OUTPUT);
+
   pinMode(X_SENSOR, INPUT);
+  pinMode(Y_SENSOR, INPUT);
   pinMode(Z_SENSOR, INPUT);
 
   Serial.begin(115200);
@@ -35,6 +45,7 @@ void setup()
 void loop()
 {
   gotoHome();
+  delay(200);
 
   /*
   Serial.println("Bitte gebe einen namen ein:");
@@ -89,7 +100,7 @@ void stopMove() {
 
 void moveSteps(int steps, int stepPin, int dirPin, bool reverse) {
   if (reverse) {
-    digitalWrite(dirPing, HIGH);
+    digitalWrite(dirPin, HIGH);
   }
 
   for (int i = 0; i < steps; i++) {
@@ -99,8 +110,8 @@ void moveSteps(int steps, int stepPin, int dirPin, bool reverse) {
     delayMicroseconds(MOTOR_STEP_TIME);
   }
 
-  digitalWrite(stepPin, low);
-  digitalWrite(dirPin, low);
+  digitalWrite(stepPin, LOW);
+  digitalWrite(dirPin, LOW);
 }
 
 // coord: Range 0 too 1
@@ -121,7 +132,7 @@ void moveXRelative(float offset) {
 }
 
 void moveZ(float coord) {
-  moveYRelative((coord - positionZ));
+  moveZRelative((coord - positionZ));
   positionZ = coord;
 }
 
@@ -143,7 +154,8 @@ void stopDrill() {
   digitalWrite(DRILL_MOTOR_POWER_PIN, LOW);
 
   // Weird workaround
-  calibrateDrillAxis();
+  // Bewegt sich gleich hoch
+  calibrateYAxis();
   drillLowered = false;
 }
 
@@ -161,15 +173,15 @@ void gotoHome() {
 
   calibrateXAxis();
   calibrateZAxis();
-  calibrateDrillAxis();
+  calibrateYAxis();
 }
 
 void calibrateXAxis() {
   // Move to sensor; Move away; Move towards... slower; Move away... slower
   moveToSensor(X_MOTOR_STEP_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(X_MOTOR_STEP_PIN, X__MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME);
   moveToSensor(X_MOTOR_STEP_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
-  moveFromSensor(X_MOTOR_STEP_PIN, X__MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveFromSensor(X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
 }
 
 void calibrateZAxis() {
@@ -180,12 +192,12 @@ void calibrateZAxis() {
   moveFromSensor(Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN, Z_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
 }
 
-void calibrateDrillAxis() {
+void calibrateYAxis() {
   // Definitely didn't copy paste it... I would never!
-  moveToSensor(DRILL_MOTOR_STEP_PIN, DRILL_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(DRILL_MOTOR_STEP_PIN, DRILL_MOTOR_DIR_PIN, DRILL_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(DRILL_MOTOR_STEP_PIN, DRILL_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
-  moveFromSensor(DRILL_MOTOR_STEP_PIN, DRILL_MOTOR_DIR_PIN, DRILL_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveToSensor(Y_MOTOR_STEP_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveToSensor(Y_MOTOR_STEP_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
 }
 
 void moveToSensor(int motorPin, int sensorPin, int speed) {
@@ -197,7 +209,7 @@ void moveToSensor(int motorPin, int sensorPin, int speed) {
 void moveFromSensor(int motorPin, int directionPin, int sensorPin, int speed) {
   digitalWrite(directionPin, HIGH);
 
-  while(digitalRead(sensorPin) == 0) {
+  while(digitalRead(sensorPin) == 1) {
     moveSlowly(motorPin, speed);
   }
 
