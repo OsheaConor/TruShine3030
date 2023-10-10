@@ -1,6 +1,7 @@
 #define X_STEP_COUNT 800
 #define Z_STEP_COUNT 400
 // Fiktive Werte!
+//NÖ
 
 #define MOTOR_STEP_TIME 200
 #define MOTOR_SLOW_STEP_TIME 800
