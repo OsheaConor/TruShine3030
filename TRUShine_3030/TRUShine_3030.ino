@@ -74,7 +74,7 @@ void setup()
   pinMode(Y_SENSOR, INPUT);
   pinMode(Z_SENSOR, INPUT);
 
-  Serial.begin(112500);
+  Serial.begin(115200);
 }
 
 void loop()
