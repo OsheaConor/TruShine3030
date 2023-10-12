@@ -1,5 +1,12 @@
+#include <AccelStepper.h>
+
+// Eine rev des Stepper motors braucht 800 steps 
+
 #define X_STEP_COUNT 800
 #define Y_STEP_COUNT 400
+
+#define X_STEP_CHAR_COUNT 50
+#define Y_STEP_CHAR_COUNT 100
 // Fiktive Werte!
 
 #define MOTOR_STEP_TIME 200
@@ -8,20 +15,27 @@
 // Zahlen müssen nochmal überarbeitet werden!
 // MOTOR_SLOW_STEP_FACTOR besagt, wie viel langsamer der Motor sich bewegen muss, wenn er beim Kalibrieren von dem Schalter weg fährt.
 
+#define DRILL_STEP_SPEED 600
+// Speed with which the drill will move, while drilling.
+// Speed in steps/s
+
 #define X_MOTOR_DIR_PIN 19
 #define X_MOTOR_STEP_PIN 21
-#define Y_MOTOR_DIR_PIN 15
-#define Y_MOTOR_STEP_PIN 17
-#define Z_MOTOR_DIR_PIN 5
-#define Z_MOTOR_STEP_PIN 18
+#define Y_MOTOR_DIR_PIN 5
+#define Y_MOTOR_STEP_PIN 18
+#define Z_MOTOR_DIR_PIN 15
+#define Z_MOTOR_STEP_PIN 17
 #define DRILL_MOTOR_POWER_PIN 4
 
 #define X_SENSOR 34
-#define Z_SENSOR 35
-#define Y_SENSOR 32
+#define Y_SENSOR 35
+#define Z_SENSOR 32
 
 #define CHAR_AMOUNT 26
 #define COORD_AMOUNT 144
+
+AccelStepper X_STEPPER_MOTOR(AccelStepper::DRIVER, X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN);
+AccelStepper Y_STEPPER_MOTOR(AccelStepper::DRIVER, Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN);
 
 static uint CHAR_INDEXES[CHAR_AMOUNT] = {0, 6, 14, 18, 27, 34, 40, 45, 51, 53, 58, 65, 69, 75, 81, 86, 91, 100, 106, 112, 116, 120, 123, 130, 135, 140};
 
@@ -51,7 +65,7 @@ static float CHAR_MAP[COORD_AMOUNT][2] = {
   {0.0, 0.875}, {0.0, 0.125}, {0.5, 0.125},  {0.5, 0.5},    {0.5, 0.125},  {1.0, 0.125}, {1.0, 0.875},                              //W[7](123-129)
   {0.0, 0.875}, {1.0, 0.125}, {0.5, 0.5},    {0.0, 0.125},  {1.0, 0.875},                                                           //X[5](130-134)
   {0.0, 0.875}, {0.5, 0.5},   {1.0, 0.875},  {0.5, 0.5},    {0.5, 0.125},                                                           //Y[5](135-139)
-  {1.0, 0.125}, {0.0, 0.125}, {1.0, 0.875},  {0.0, 0.875},                                                                          //Z[4](140-143)
+  {1.0, 0.125}, {0.0, 0.125}, {1.0, 0.875},  {0.0, 0.875}                                                                           //Z[4](140-143)
 };
 
 
@@ -74,31 +88,16 @@ void setup()
   pinMode(Y_SENSOR, INPUT);
   pinMode(Z_SENSOR, INPUT);
 
+  X_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+  Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+  X_STEPPER_MOTOR.setAcceleration(DRILL_STEP_SPEED);
+  Y_STEPPER_MOTOR.setAcceleration(DRILL_STEP_SPEED);
+
   Serial.begin(115200);
 }
 
 void loop()
 {
-  //gotoHome();
-  //delay(200);
-
-  char c = 'Z';
-  float** coords = charTooCoords(c);
-  for (int i = 0; i < getCoordLength(c); i++) {
-    Serial.print(coords[i][0]);
-    Serial.print("   ");
-    Serial.println(coords[i][1]);
-  }
-  
-
-  /*
-  Serial.println("Bitte gebe einen namen ein:");
-  String name = getUserNameFromConsole();
-  if (!isLettersOnly(name)) {
-    Serial.println("Der Name darf nur Buchstaben enthalten!");
-    return;
-  }
-  */
 }
 
 // ========
@@ -151,6 +150,52 @@ bool isLettersOnly(String txt) {
   }
   
 	return true;
+}
+
+// ===================
+/* Drill Char Logic */
+// ===================
+
+void drillChar(char c, uint charIndex) {
+  // Get the (0 0) coords of the char field.
+  // Christophs function
+
+  // Assuming that the drill is at (0 0) of the char field:
+  float** charCoords = charTooCoords(c);
+  uint coordLen = getCoordLength(c);
+
+  moveDrillInCharField(charCoords, coordLen);
+}
+
+void moveDrillInCharField(float** coords, uint len) {
+  stopDrill();
+
+  float charPosX = 0.0;
+  float charPosY = 0.0;
+
+  for(int i = 0; i < len; i++) {
+    float* charCoord = coords[i];
+
+    // Values between 0 and 1
+    float xOffset = (charCoord[0] - charPosX);
+    float yOffset = (charCoord[1] - charPosY);
+
+    int xSteps = (X_STEP_CHAR_COUNT * xOffset);
+    int ySteps = (Y_STEP_CHAR_COUNT * yOffset);
+    float ySpeed = DRILL_STEP_SPEED * (ySteps / xSteps);
+
+    if (xSteps > 0) { X_STEPPER_MOTOR.move(xSteps); }
+    if (ySteps > 0) { Y_STEPPER_MOTOR.move(ySteps); }
+
+    Y_STEPPER_MOTOR.setSpeed(ySpeed);
+
+    // Todo:
+    //  Run motors with #run
+    //  Break from loop with #distanceToGo
+  }
+
+  Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+  stopDrill();
 }
 
 // ======================
@@ -249,8 +294,8 @@ void gotoHome() {
   stopDrill();
 
   calibrateXAxis();
-  calibrateZAxis();
   calibrateYAxis();
+  // calibrateZAxis();
 }
 
 void calibrateXAxis() {
