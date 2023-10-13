@@ -37,6 +37,7 @@
 
 AccelStepper X_STEPPER_MOTOR(AccelStepper::DRIVER, X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN);
 AccelStepper Y_STEPPER_MOTOR(AccelStepper::DRIVER, Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN);
+AccelStepper Z_STEPPER_MOTOR(AccelStepper::DRIVER, Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN);
 
 static uint CHAR_INDEXES[CHAR_AMOUNT] = {0, 6, 14, 18, 27, 34, 40, 45, 51, 53, 58, 65, 69, 75, 81, 86, 91, 100, 106, 112, 116, 120, 123, 130, 135, 140};
 
@@ -305,48 +306,46 @@ void gotoHome() {
 
 void calibrateXAxis() {
   // Move to sensor; Move away; Move towards... slower; Move away... slower
-  moveToSensor(X_MOTOR_STEP_PIN, X_SENSOR,X_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(X_MOTOR_STEP_PIN, X_SENSOR,X_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
 }
 
 void calibrateZAxis() {
   // Definitely didn't copy paste it
-  moveToSensor(Z_MOTOR_STEP_PIN, Z_SENSOR,Z_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(Z_MOTOR_STEP_PIN, Z_SENSOR,Z_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME * 2);
-  moveFromSensor(Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN, Z_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
 }
 
 void calibrateYAxis() {
   // Definitely didn't copy paste it... I would never!
-  moveToSensor(Y_MOTOR_STEP_PIN, Y_SENSOR,Y_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(Y_MOTOR_STEP_PIN, Y_SENSOR,Y_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
 }
 
-void moveToSensor(int motorPin, int sensorPin,int directionPin, int speed) {
-  digitalWrite(directionPin, LOW);
-  while(digitalRead(sensorPin) == 0) {
-    moveSlowly(motorPin, speed);
-  }
-}
-
-void moveFromSensor(int motorPin, int directionPin, int sensorPin, int speed) {
-  digitalWrite(directionPin, HIGH);
+void moveToSensor(AccelStepper motor, int sensorPin, int speed) {
+  motor.setSpeed(speed);
+  motor.setPinsInverted(false, false, false);
 
   while(digitalRead(sensorPin) == 1) {
-    moveSlowly(motorPin, speed);
+    motor.runSpeed();
+    motor.setSpeed(speed);
   }
-
-  digitalWrite(directionPin, LOW);
 }
 
-void moveSlowly(int motorPin, int stepSpeed) {
-    digitalWrite(motorPin, HIGH);
-    delayMicroseconds(stepSpeed);
-    digitalWrite(motorPin, LOW);
-    delayMicroseconds(stepSpeed);
+void moveFromSensor(AccelStepper motor, int sensorPin, int speed) {
+  motor.setSpeed(speed);
+  motor.setPinsInverted(true, false, false);
+
+  while(digitalRead(sensorPin) == 1) {
+    motor.runSpeed();
+    motor.setSpeed(speed);
+  }
+
+  motor.setPinsInverted(false, false, false);
 }
