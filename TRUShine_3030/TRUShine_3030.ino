@@ -15,6 +15,7 @@
 // Zahlen müssen nochmal überarbeitet werden!
 // MOTOR_SLOW_STEP_FACTOR besagt, wie viel langsamer der Motor sich bewegen muss, wenn er beim Kalibrieren von dem Schalter weg fährt.
 
+#define MOVE_STEP_SPEED 900
 #define DRILL_STEP_SPEED 600
 // Speed with which the drill will move, while drilling.
 // Speed in steps/s
@@ -225,24 +226,19 @@ String getUserNameFromConsole() {
 // =================
 
 void stopMove() {
-  digitalWrite(X_MOTOR_STEP_PIN, LOW);
-  digitalWrite(Z_MOTOR_STEP_PIN, LOW);
+  X_STEPPER_MOTOR.stop();
+  Y_STEPPER_MOTOR.stop();
 }
 
-void moveSteps(int steps, int stepPin, int dirPin, bool reverse) {
-  if (reverse) {
-    digitalWrite(dirPin, HIGH);
-  }
+void moveSteps(AccelStepper motor, uint steps, bool reverse) {
+  steps = (reverse) ? -steps : steps;
 
-  for (int i = 0; i < steps; i++) {
-    digitalWrite(stepPin, HIGH);
-    delayMicroseconds(MOTOR_STEP_TIME);
-    digitalWrite(stepPin, LOW);
-    delayMicroseconds(MOTOR_STEP_TIME);
-  }
+  motor.setSpeed(MOVE_STEP_SPEED);
+  motor.move(steps);
 
-  digitalWrite(stepPin, LOW);
-  digitalWrite(dirPin, LOW);
+  while (motor.distanceToGo() > 0) {
+    motor.run();
+  }
 }
 
 // coord: Range 0 too 1
@@ -258,7 +254,7 @@ void moveXRelative(float offset) {
   int steps = X_STEP_COUNT * offset;
   bool reverse = (steps < 0);
 
-  moveSteps(abs(steps), X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, reverse);
+  moveSteps(X_STEPPER_MOTOR, abs(steps), reverse);
   positionX += offset;
 }
 
@@ -272,7 +268,7 @@ void moveYRelative(float offset) {
   int steps = Y_STEP_COUNT * offset;
   bool reverse = (steps < 0);
 
-  moveSteps(abs(steps), Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, reverse);
+  moveSteps(Y_STEPPER_MOTOR, abs(steps), reverse);
   positionY += offset;
 }
 
