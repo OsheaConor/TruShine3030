@@ -182,16 +182,25 @@ void moveDrillInCharField(float** coords, uint len) {
 
     int xSteps = (X_STEP_CHAR_COUNT * xOffset);
     int ySteps = (Y_STEP_CHAR_COUNT * yOffset);
+
+    float xSpeed = DRILL_STEP_SPEED;
     float ySpeed = DRILL_STEP_SPEED * (ySteps / xSteps);
 
-    if (xSteps > 0) { X_STEPPER_MOTOR.move(xSteps); }
-    if (ySteps > 0) { Y_STEPPER_MOTOR.move(ySteps); }
+    X_STEPPER_MOTOR.move(xSteps);
+    Y_STEPPER_MOTOR.move(ySteps);
 
     Y_STEPPER_MOTOR.setSpeed(ySpeed);
 
-    // Todo:
-    //  Run motors with #run
-    //  Break from loop with #distanceToGo
+    AccelStepper checkStepper = (xSteps >= ySteps) ? X_STEPPER_MOTOR : Y_STEPPER_MOTOR;
+
+    // Blocking loop, da #run / #runSpeed nicht den Thread blockiert
+    while(checkStepper.distanceToGo() > 0) {
+      X_STEPPER_MOTOR.runSpeed();
+      Y_STEPPER_MOTOR.runSpeed();
+
+      X_STEPPER_MOTOR.setSpeed(xSpeed);
+      Y_STEPPER_MOTOR.setSpeed(ySpeed);
+    }
   }
 
   Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
