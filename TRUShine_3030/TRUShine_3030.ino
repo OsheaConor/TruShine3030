@@ -15,6 +15,7 @@
 // Zahlen müssen nochmal überarbeitet werden!
 // MOTOR_SLOW_STEP_FACTOR besagt, wie viel langsamer der Motor sich bewegen muss, wenn er beim Kalibrieren von dem Schalter weg fährt.
 
+#define MOVE_STEP_SPEED 900
 #define DRILL_STEP_SPEED 600
 // Speed with which the drill will move, while drilling.
 // Speed in steps/s
@@ -36,6 +37,7 @@
 
 AccelStepper X_STEPPER_MOTOR(AccelStepper::DRIVER, X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN);
 AccelStepper Y_STEPPER_MOTOR(AccelStepper::DRIVER, Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN);
+AccelStepper Z_STEPPER_MOTOR(AccelStepper::DRIVER, Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN);
 
 static uint CHAR_INDEXES[CHAR_AMOUNT] = {0, 6, 14, 18, 27, 34, 40, 45, 51, 53, 58, 65, 69, 75, 81, 86, 91, 100, 106, 112, 116, 120, 123, 130, 135, 140};
 
@@ -182,16 +184,25 @@ void moveDrillInCharField(float** coords, uint len) {
 
     int xSteps = (X_STEP_CHAR_COUNT * xOffset);
     int ySteps = (Y_STEP_CHAR_COUNT * yOffset);
+
+    float xSpeed = DRILL_STEP_SPEED;
     float ySpeed = DRILL_STEP_SPEED * (ySteps / xSteps);
 
-    if (xSteps > 0) { X_STEPPER_MOTOR.move(xSteps); }
-    if (ySteps > 0) { Y_STEPPER_MOTOR.move(ySteps); }
+    X_STEPPER_MOTOR.move(xSteps);
+    Y_STEPPER_MOTOR.move(ySteps);
 
     Y_STEPPER_MOTOR.setSpeed(ySpeed);
 
-    // Todo:
-    //  Run motors with #run
-    //  Break from loop with #distanceToGo
+    AccelStepper checkStepper = (xSteps >= ySteps) ? X_STEPPER_MOTOR : Y_STEPPER_MOTOR;
+
+    // Blocking loop, da #run / #runSpeed nicht den Thread blockiert
+    while(checkStepper.distanceToGo() > 0) {
+      X_STEPPER_MOTOR.runSpeed();
+      Y_STEPPER_MOTOR.runSpeed();
+
+      X_STEPPER_MOTOR.setSpeed(xSpeed);
+      Y_STEPPER_MOTOR.setSpeed(ySpeed);
+    }
   }
 
   Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
@@ -216,24 +227,19 @@ String getUserNameFromConsole() {
 // =================
 
 void stopMove() {
-  digitalWrite(X_MOTOR_STEP_PIN, LOW);
-  digitalWrite(Z_MOTOR_STEP_PIN, LOW);
+  X_STEPPER_MOTOR.stop();
+  Y_STEPPER_MOTOR.stop();
 }
 
-void moveSteps(int steps, int stepPin, int dirPin, bool reverse) {
-  if (reverse) {
-    digitalWrite(dirPin, HIGH);
-  }
+void moveSteps(AccelStepper motor, uint steps, bool reverse) {
+  steps = (reverse) ? -steps : steps;
 
-  for (int i = 0; i < steps; i++) {
-    digitalWrite(stepPin, HIGH);
-    delayMicroseconds(MOTOR_STEP_TIME);
-    digitalWrite(stepPin, LOW);
-    delayMicroseconds(MOTOR_STEP_TIME);
-  }
+  motor.setSpeed(MOVE_STEP_SPEED);
+  motor.move(steps);
 
-  digitalWrite(stepPin, LOW);
-  digitalWrite(dirPin, LOW);
+  while (motor.distanceToGo() > 0) {
+    motor.run();
+  }
 }
 
 // coord: Range 0 too 1
@@ -249,7 +255,7 @@ void moveXRelative(float offset) {
   int steps = X_STEP_COUNT * offset;
   bool reverse = (steps < 0);
 
-  moveSteps(abs(steps), X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, reverse);
+  moveSteps(X_STEPPER_MOTOR, abs(steps), reverse);
   positionX += offset;
 }
 
@@ -263,7 +269,7 @@ void moveYRelative(float offset) {
   int steps = Y_STEP_COUNT * offset;
   bool reverse = (steps < 0);
 
-  moveSteps(abs(steps), Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, reverse);
+  moveSteps(Y_STEPPER_MOTOR, abs(steps), reverse);
   positionY += offset;
 }
 
@@ -300,48 +306,46 @@ void gotoHome() {
 
 void calibrateXAxis() {
   // Move to sensor; Move away; Move towards... slower; Move away... slower
-  moveToSensor(X_MOTOR_STEP_PIN, X_SENSOR,X_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(X_MOTOR_STEP_PIN, X_SENSOR,X_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN, X_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
 }
 
 void calibrateZAxis() {
   // Definitely didn't copy paste it
-  moveToSensor(Z_MOTOR_STEP_PIN, Z_SENSOR,Z_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(Z_MOTOR_STEP_PIN, Z_SENSOR,Z_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME * 2);
-  moveFromSensor(Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN, Z_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
+  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME * 2);
 }
 
 void calibrateYAxis() {
   // Definitely didn't copy paste it... I would never!
-  moveToSensor(Y_MOTOR_STEP_PIN, Y_SENSOR,Y_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(Y_MOTOR_STEP_PIN, Y_SENSOR,Y_MOTOR_DIR_PIN, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN, Y_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
+  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME * MOTOR_SLOW_STEP_FACTOR);
 }
 
-void moveToSensor(int motorPin, int sensorPin,int directionPin, int speed) {
-  digitalWrite(directionPin, LOW);
-  while(digitalRead(sensorPin) == 0) {
-    moveSlowly(motorPin, speed);
-  }
-}
-
-void moveFromSensor(int motorPin, int directionPin, int sensorPin, int speed) {
-  digitalWrite(directionPin, HIGH);
+void moveToSensor(AccelStepper motor, int sensorPin, int speed) {
+  motor.setSpeed(speed);
+  motor.setPinsInverted(false, false, false);
 
   while(digitalRead(sensorPin) == 1) {
-    moveSlowly(motorPin, speed);
+    motor.runSpeed();
+    motor.setSpeed(speed);
   }
-
-  digitalWrite(directionPin, LOW);
 }
 
-void moveSlowly(int motorPin, int stepSpeed) {
-    digitalWrite(motorPin, HIGH);
-    delayMicroseconds(stepSpeed);
-    digitalWrite(motorPin, LOW);
-    delayMicroseconds(stepSpeed);
+void moveFromSensor(AccelStepper motor, int sensorPin, int speed) {
+  motor.setSpeed(speed);
+  motor.setPinsInverted(true, false, false);
+
+  while(digitalRead(sensorPin) == 1) {
+    motor.runSpeed();
+    motor.setSpeed(speed);
+  }
+
+  motor.setPinsInverted(false, false, false);
 }
