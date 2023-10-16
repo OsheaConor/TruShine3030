@@ -16,7 +16,7 @@
 // MOTOR_SLOW_STEP_FACTOR besagt, wie viel langsamer der Motor sich bewegen muss, wenn er beim Kalibrieren von dem Schalter weg fährt.
 
 #define MOVE_STEP_SPEED 900
-#define DRILL_STEP_SPEED 600
+#define DRILL_STEP_SPEED 800
 // Speed with which the drill will move, while drilling.
 // Speed in steps/s
 
@@ -77,6 +77,8 @@ static bool drillLowered = false;
 
 void setup()
 {
+  Serial.begin(115200);
+
   pinMode(X_MOTOR_STEP_PIN, OUTPUT);
   pinMode(X_MOTOR_DIR_PIN, OUTPUT);
   pinMode(Y_MOTOR_STEP_PIN, OUTPUT);
@@ -90,16 +92,18 @@ void setup()
   pinMode(Y_SENSOR, INPUT);
   pinMode(Z_SENSOR, INPUT);
 
-  X_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
-  Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
   X_STEPPER_MOTOR.setAcceleration(DRILL_STEP_SPEED);
   Y_STEPPER_MOTOR.setAcceleration(DRILL_STEP_SPEED);
-
-  Serial.begin(115200);
+  X_STEPPER_MOTOR.setMaxSpeed(DRILL_STEP_SPEED);
+  Y_STEPPER_MOTOR.setMaxSpeed(DRILL_STEP_SPEED);
 }
 
 void loop()
 {
+  moveSteps(1600, 0);
+  delay(3000);
+  moveSteps(800, 1600);
+  delay(10000);
 }
 
 // ========
@@ -185,27 +189,9 @@ void moveDrillInCharField(float** coords, uint len) {
     int xSteps = (X_STEP_CHAR_COUNT * xOffset);
     int ySteps = (Y_STEP_CHAR_COUNT * yOffset);
 
-    float xSpeed = DRILL_STEP_SPEED;
-    float ySpeed = DRILL_STEP_SPEED * (ySteps / xSteps);
+    // Insert movement logic per char
 
-    X_STEPPER_MOTOR.move(xSteps);
-    Y_STEPPER_MOTOR.move(ySteps);
-
-    Y_STEPPER_MOTOR.setSpeed(ySpeed);
-
-    AccelStepper checkStepper = (xSteps >= ySteps) ? X_STEPPER_MOTOR : Y_STEPPER_MOTOR;
-
-    // Blocking loop, da #run / #runSpeed nicht den Thread blockiert
-    while(checkStepper.distanceToGo() > 0) {
-      X_STEPPER_MOTOR.runSpeed();
-      Y_STEPPER_MOTOR.runSpeed();
-
-      X_STEPPER_MOTOR.setSpeed(xSpeed);
-      Y_STEPPER_MOTOR.setSpeed(ySpeed);
-    }
   }
-
-  Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
   stopDrill();
 }
 
@@ -231,15 +217,43 @@ void stopMove() {
   Y_STEPPER_MOTOR.stop();
 }
 
-void moveSteps(AccelStepper motor, uint steps, bool reverse) {
-  steps = (reverse) ? -steps : steps;
+void moveSteps(int xSteps, int ySteps) {
+  float* speeds = configureMotors(xSteps, ySteps);
 
-  motor.setSpeed(MOVE_STEP_SPEED);
-  motor.move(steps);
+  float xSpeed = speeds[0];
+  float ySpeed = speeds[1];
 
-  while (motor.distanceToGo() > 0) {
-    motor.run();
+  X_STEPPER_MOTOR.move(xSteps);
+  Y_STEPPER_MOTOR.move(ySteps);
+
+  AccelStepper* controlMotorPtr = (xSteps == 0) ? &Y_STEPPER_MOTOR : &X_STEPPER_MOTOR;
+
+  while(controlMotorPtr->distanceToGo() > 0) {
+    Serial.println(controlMotorPtr->distanceToGo());
+    X_STEPPER_MOTOR.setSpeed(xSpeed);
+    Y_STEPPER_MOTOR.setSpeed(ySpeed);
+    
+    X_STEPPER_MOTOR.runSpeed();
+    Y_STEPPER_MOTOR.runSpeed();
   }
+}
+
+float* configureMotors(int xSteps, int ySteps) {
+  bool xHigh = (xSteps > ySteps) ? true : false;
+  AccelStepper throttledMotor = (xHigh) ? Y_STEPPER_MOTOR : X_STEPPER_MOTOR;
+  AccelStepper nonThrottledMotor = (xHigh) ? X_STEPPER_MOTOR : Y_STEPPER_MOTOR;
+  float throttle = (xHigh) ? ((float) ySteps / (float) xSteps) : ((float) xSteps / (float) ySteps);
+
+  float throttledMotorSpeed = (DRILL_STEP_SPEED * throttle);
+  throttledMotor.setSpeed(throttledMotorSpeed);
+  throttledMotor.setAcceleration(throttledMotorSpeed);
+
+  nonThrottledMotor.setSpeed(DRILL_STEP_SPEED);
+  
+  float xSpeed = (xHigh) ? DRILL_STEP_SPEED : throttledMotorSpeed;
+  float ySpeed = (xHigh) ? throttledMotorSpeed : DRILL_STEP_SPEED;
+
+  return new float[2] {xSpeed, ySpeed};
 }
 
 // coord: Range 0 too 1
@@ -255,7 +269,7 @@ void moveXRelative(float offset) {
   int steps = X_STEP_COUNT * offset;
   bool reverse = (steps < 0);
 
-  moveSteps(X_STEPPER_MOTOR, abs(steps), reverse);
+  moveSteps(abs(steps), 0);
   positionX += offset;
 }
 
@@ -269,7 +283,7 @@ void moveYRelative(float offset) {
   int steps = Y_STEP_COUNT * offset;
   bool reverse = (steps < 0);
 
-  moveSteps(Y_STEPPER_MOTOR, abs(steps), reverse);
+  moveSteps(0, abs(steps));
   positionY += offset;
 }
 
@@ -279,6 +293,7 @@ void moveYRelative(float offset) {
 
 void stopDrill() {
   stopMove();
+  // Rewrite with lib
   digitalWrite(DRILL_MOTOR_POWER_PIN, LOW);
 
   // Weird workaround
