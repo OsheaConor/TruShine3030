@@ -43,7 +43,7 @@ AccelStepper Z_STEPPER_MOTOR(AccelStepper::DRIVER, Z_MOTOR_STEP_PIN, Z_MOTOR_DIR
 static uint CHAR_INDEXES[CHAR_AMOUNT] = {0, 6, 14, 18, 27, 34, 40, 45, 51, 53, 58, 65, 69, 75, 81, 86, 91, 100, 106, 112, 116, 120, 123, 130, 135, 140};
 
 static float CHAR_MAP[COORD_AMOUNT][2] = {
-  {0.0, 0.125}, {0.0, 0.875}, {1.0, 0.875},  {1.0, 0.125},  {1.0, 0.5},    {0.0, 0.5},                                              //A [6] (0-5)
+  {0.0, 0.125}, {0.0, 0.875}, {1.0, 0.875},  {1.0, 0.125},  {1.0, 0.5},    {0.0, 0.5},                                              //A[6] (0-5)
   {0.0, 0.125}, {0.0, 0.875}, {1.0, 0.875},  {1.0, 0.5},    {0.0, 0.5},    {1.0, 0.5},   {1.0, 0.125}, {0.0, 0.125},                //B[8](6-13)
   {1.0, 0.125}, {0.0, 0.125}, {0.0, 0.875},  {1.0, 0.875},                                                                          //C[4](14-17)
   {0.0, 0.125}, {0.0, 0.875}, {0.75, 0.875}, {0.75, 0.75},  {1.0, 0.75},   {1.0, 0.25},  {0.75, 0.25}, {0.75, 0.125}, {0.0, 0.125}, //D[9](18-26)
@@ -101,14 +101,6 @@ void setup()
 
 void loop()
 {
-  moveSteps(1600, 0);
-  moveSteps(0, 800);
-  moveSteps(-1600, 0);
-  moveSteps(0, -800);
-  moveSteps(1600, 800);
-  moveSteps(-1600, 0);
-  moveSteps(1600, -800);
-  delay(3000);
 }
 
 // ========
@@ -169,34 +161,31 @@ bool isLettersOnly(String txt) {
 
 void drillChar(char c, uint charIndex) {
   // Get the (0 0) coords of the char field.
-  // Christophs function
+  // Get scaling factor of char fields
+  // Christophs functions
+
+  // Move to 0 0 of the char field
+  // moveToOnBoard(getCharOrigin(charIndex), someConstYValue);  <Pseudo>
 
   // Assuming that the drill is at (0 0) of the char field:
   float** charCoords = charTooCoords(c);
   uint coordLen = getCoordLength(c);
 
-  moveDrillInCharField(charCoords, coordLen);
-}
+  float posCharX = 0.0f;
+  float posCharY = 0.0f;
 
-void moveDrillInCharField(float** coords, uint len) {
-  stopDrill();
+  startDrill();
+  for (int i = 0; i < len; i++) {
+    float xCoord = coords[i][0];
+    float yCoord = coords[i][1];
 
-  float charPosX = 0.0;
-  float charPosY = 0.0;
+    moveRelativeInCharField((xCoord - posCharX), (yCoord - posCharY));
 
-  for(int i = 0; i < len; i++) {
-    float* charCoord = coords[i];
-
-    // Values between 0 and 1
-    float xOffset = (charCoord[0] - charPosX);
-    float yOffset = (charCoord[1] - charPosY);
-
-    int xSteps = (X_STEP_CHAR_COUNT * xOffset);
-    int ySteps = (Y_STEP_CHAR_COUNT * yOffset);
-
-    // Insert movement logic per char
-
+    posCharX = xCoord;
+    posCharY = yCoord;
   }
+
+  stopMove();
   stopDrill();
 }
 
@@ -281,6 +270,16 @@ void moveToOnBoard(float x, float y) {
   moveRelativeOnBoard((x - positionX), (y - positionY));
 }
 
+void moveRelativeInCharField(float x, float y) {
+  int xSteps = X_STEP_CHAR_COUNT * x;
+  int ySteps = Y_STEP_CHAR_COUNT * y;
+
+  positionX += (x * (X_STEP_COUNT / X_STEP_CHAR_COUNT));
+  positionY += (y * (Y_STEP_COUNT / Y_STEP_CHAR_COUNT));
+
+  moveSteps(xSteps, ySteps);
+}
+
 // =====================
 /* Drillhead Movement */
 // =====================
@@ -307,10 +306,11 @@ void startDrill() {
 
 void gotoHome() {
   stopDrill();
+  delay(1000);    // Just in case
 
   calibrateXAxis();
   calibrateYAxis();
-  // calibrateZAxis();
+  calibrateZAxis();
 }
 
 void calibrateXAxis() {
