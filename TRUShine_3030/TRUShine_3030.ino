@@ -102,9 +102,13 @@ void setup()
 void loop()
 {
   moveSteps(1600, 0);
+  moveSteps(0, 800);
+  moveSteps(-1600, 0);
+  moveSteps(0, -800);
+  moveSteps(1600, 800);
+  moveSteps(-1600, 0);
+  moveSteps(1600, -800);
   delay(3000);
-  moveSteps(800, 1600);
-  delay(10000);
 }
 
 // ========
@@ -224,8 +228,11 @@ void moveSteps(int xSteps, int ySteps) {
   float xSpeed = speeds[0];
   float ySpeed = speeds[1];
 
-  X_STEPPER_MOTOR.move(xSteps);
-  Y_STEPPER_MOTOR.move(ySteps);
+  X_STEPPER_MOTOR.move(abs(xSteps));
+  Y_STEPPER_MOTOR.move(abs(ySteps));
+
+  X_STEPPER_MOTOR.setPinsInverted((xSteps < 0), false, false);
+  Y_STEPPER_MOTOR.setPinsInverted((ySteps < 0), false, false);
 
   AccelStepper* controlMotorPtr = (xSteps == 0) ? &Y_STEPPER_MOTOR : &X_STEPPER_MOTOR;
 
@@ -236,13 +243,17 @@ void moveSteps(int xSteps, int ySteps) {
     X_STEPPER_MOTOR.runSpeed();
     Y_STEPPER_MOTOR.runSpeed();
   }
+
+  X_STEPPER_MOTOR.setPinsInverted(false, false, false);
+  Y_STEPPER_MOTOR.setPinsInverted(false, false, false);
 }
 
 float* configureMotors(int xSteps, int ySteps) {
-  bool xHigh = (xSteps > ySteps) ? true : false;
+  bool xHigh = (abs(xSteps) > abs(ySteps)) ? true : false;
   AccelStepper* throttledMotor = (xHigh) ? &Y_STEPPER_MOTOR : &X_STEPPER_MOTOR;
   AccelStepper* nonThrottledMotor = (xHigh) ? &X_STEPPER_MOTOR : &Y_STEPPER_MOTOR;
   float throttle = (xHigh) ? ((float) ySteps / (float) xSteps) : ((float) xSteps / (float) ySteps);
+  throttle = abs(throttle);
 
   float throttledMotorSpeed = (DRILL_STEP_SPEED * throttle);
   throttledMotor->setSpeed(throttledMotorSpeed);
@@ -256,35 +267,18 @@ float* configureMotors(int xSteps, int ySteps) {
   return new float[2] {xSpeed, ySpeed};
 }
 
-// coord: Range 0 too 1
-void moveX(float coord) {
-  moveXRelative((coord - positionX));
-  positionX = coord;
+void moveRelativeOnBoard(float x, float y) {
+  int xSteps = X_STEP_COUNT * x;
+  int ySteps = Y_STEP_COUNT * y;
+
+  positionX += x;
+  positionY += y;
+
+  moveSteps(xSteps, ySteps);
 }
 
-// If the offset exceeds the bounds of the plate, ie. coords > 1, it will move to the bounds of the plate.
-// Input can be negative to move in -x direction.
-void moveXRelative(float offset) {
-  offset = clamp((positionX + offset), 0, 1);
-  int steps = X_STEP_COUNT * offset;
-  bool reverse = (steps < 0);
-
-  moveSteps(abs(steps), 0);
-  positionX += offset;
-}
-
-void moveY(float coord) {
-  moveYRelative((coord - positionY));
-  positionY = coord;
-}
-
-void moveYRelative(float offset) {
-  offset = clamp((positionY + offset), 0, 1);
-  int steps = Y_STEP_COUNT * offset;
-  bool reverse = (steps < 0);
-
-  moveSteps(0, abs(steps));
-  positionY += offset;
+void moveToOnBoard(float x, float y) {
+  moveRelativeOnBoard((x - positionX), (y - positionY));
 }
 
 // =====================
