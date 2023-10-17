@@ -229,7 +229,6 @@ void moveSteps(int xSteps, int ySteps) {
   AccelStepper* controlMotorPtr = (xSteps == 0) ? &Y_STEPPER_MOTOR : &X_STEPPER_MOTOR;
 
   while(controlMotorPtr->distanceToGo() > 0) {
-    Serial.println(controlMotorPtr->distanceToGo());
     X_STEPPER_MOTOR.setSpeed(xSpeed);
     Y_STEPPER_MOTOR.setSpeed(ySpeed);
     
@@ -240,15 +239,15 @@ void moveSteps(int xSteps, int ySteps) {
 
 float* configureMotors(int xSteps, int ySteps) {
   bool xHigh = (xSteps > ySteps) ? true : false;
-  AccelStepper throttledMotor = (xHigh) ? Y_STEPPER_MOTOR : X_STEPPER_MOTOR;
-  AccelStepper nonThrottledMotor = (xHigh) ? X_STEPPER_MOTOR : Y_STEPPER_MOTOR;
+  AccelStepper* throttledMotor = (xHigh) ? &Y_STEPPER_MOTOR : &X_STEPPER_MOTOR;
+  AccelStepper* nonThrottledMotor = (xHigh) ? &X_STEPPER_MOTOR : &Y_STEPPER_MOTOR;
   float throttle = (xHigh) ? ((float) ySteps / (float) xSteps) : ((float) xSteps / (float) ySteps);
 
   float throttledMotorSpeed = (DRILL_STEP_SPEED * throttle);
-  throttledMotor.setSpeed(throttledMotorSpeed);
-  throttledMotor.setAcceleration(throttledMotorSpeed);
+  throttledMotor->setSpeed(throttledMotorSpeed);
+  throttledMotor->setAcceleration(throttledMotorSpeed);
 
-  nonThrottledMotor.setSpeed(DRILL_STEP_SPEED);
+  nonThrottledMotor->setSpeed(DRILL_STEP_SPEED);
   
   float xSpeed = (xHigh) ? DRILL_STEP_SPEED : throttledMotorSpeed;
   float ySpeed = (xHigh) ? throttledMotorSpeed : DRILL_STEP_SPEED;
