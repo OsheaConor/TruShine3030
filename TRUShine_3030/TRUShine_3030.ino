@@ -174,9 +174,9 @@ void drillChar(char c, uint charIndex) {
   float posCharY = 0.0f;
 
   startDrill();
-  for (int i = 0; i < len; i++) {
-    float xCoord = coords[i][0];
-    float yCoord = coords[i][1];
+  for (int i = 0; i < coordLen; i++) {
+    float xCoord = charCoords[i][0];
+    float yCoord = charCoords[i][1];
 
     moveRelativeInCharField((xCoord - posCharX), (yCoord - posCharY));
 
