@@ -9,8 +9,7 @@
 #define Y_STEP_CHAR_COUNT 100
 // Fiktive Werte!
 
-#define MOTOR_STEP_TIME 200
-#define MOTOR_SLOW_STEP_TIME 100
+#define MOTOR_SLOW_STEP_SPEED 100
 #define MOTOR_SLOW_STEP_FACTOR 2
 // Zahlen müssen nochmal überarbeitet werden!
 // MOTOR_SLOW_STEP_FACTOR besagt, wie viel langsamer der Motor sich bewegen muss, wenn er beim Kalibrieren von dem Schalter weg fährt.
@@ -315,26 +314,26 @@ void gotoHome() {
 
 void calibrateXAxis() {
   // Move to sensor; Move away; Move towards... slower; Move away... slower
-  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME / MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_TIME / MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
 }
 
 void calibrateZAxis() {
   // Definitely didn't copy paste it
-  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME / MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_TIME / MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
 }
 
 void calibrateYAxis() {
   // Definitely didn't copy paste it... I would never!
-  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME);
-  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME / MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_TIME / MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
 }
 
 void moveToSensor(AccelStepper motor, int sensorPin, int speed) {
