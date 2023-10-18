@@ -80,7 +80,7 @@ else //Ungerde Zahl
     Serial.println("Zu b2");
     Serial.println(b2);
     Serial.println("Die Zahl ist ungerade");
-    float c2 = ((float)30-1)* einheit;
+    float c2 = ((float)30-b2)* einheit;
     Serial.println("Cord");
     Serial.println(c2);
   }
