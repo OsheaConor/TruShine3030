@@ -102,6 +102,7 @@ void loop()
 {
 }
 
+
 // ========
 /* Utils */
 // ========
@@ -154,11 +155,12 @@ bool isLettersOnly(String txt) {
 	return true;
 }
 
+
 // ===================
 /* Drill Char Logic */
 // ===================
 
-void drillChar(char c, uint charIndex) {
+void drillChar(char c) {
   // Get the (0 0) coords of the char field.
   // Get scaling factor of char fields
   // Christophs functions
@@ -188,6 +190,7 @@ void drillChar(char c, uint charIndex) {
   stopDrill();
 }
 
+
 // ======================
 /* CONSOLE Input Logic */
 /* Muss zu USB oder anderem umgeändert werden! */
@@ -200,6 +203,7 @@ String getUserNameFromConsole() {
   
   return name;
 }
+
 
 // =================
 /* Movement Logic */
@@ -314,46 +318,46 @@ void gotoHome() {
 
 void calibrateXAxis() {
   // Move to sensor; Move away; Move towards... slower; Move away... slower
-  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveToSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveFromSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveToSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
 }
 
 void calibrateZAxis() {
   // Definitely didn't copy paste it
-  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveToSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveFromSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveToSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
 }
 
 void calibrateYAxis() {
   // Definitely didn't copy paste it... I would never!
-  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveToSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveToSensor(&Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveFromSensor(&Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveToSensor(&Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(&Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
 }
 
-void moveToSensor(AccelStepper motor, int sensorPin, int speed) {
-  motor.setSpeed(speed);
-  motor.setPinsInverted(false, false, false);
+void moveToSensor(AccelStepper *motorPtr, int sensorPin, int speed) {
+  motorPtr->setSpeed(speed);
+  motorPtr->setPinsInverted(true, false, false);
 
-  while(digitalRead(sensorPin) == 1) {
-    motor.runSpeed();
-    motor.setSpeed(speed);
+  while(digitalRead(sensorPin) == 0) {
+    motorPtr->runSpeed();
+    motorPtr->setSpeed(speed);
   }
+
+  motorPtr->setPinsInverted(false, false, false);
 }
 
-void moveFromSensor(AccelStepper motor, int sensorPin, int speed) {
-  motor.setSpeed(speed);
-  motor.setPinsInverted(true, false, false);
+void moveFromSensor(AccelStepper *motorPtr, int sensorPin, int speed) {
+  motorPtr->setSpeed(speed);
+  motorPtr->setPinsInverted(false, false, false);
 
   while(digitalRead(sensorPin) == 1) {
-    motor.runSpeed();
-    motor.setSpeed(speed);
+    motorPtr->runSpeed();
+    motorPtr->setSpeed(speed);
   }
-
-  motor.setPinsInverted(false, false, false);
 }
