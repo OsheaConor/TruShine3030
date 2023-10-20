@@ -75,6 +75,7 @@ static float positionX = 0.0f;
 static float positionY = 0.0f;
 static bool drillLowered = false;
 
+
 void setup()
 {
   Serial.begin(115200);
@@ -115,8 +116,6 @@ float** charTooCoords(char c) {
   uint endIndex = startIndex + getCoordLength(c);
   float** charCoords = new float* [endIndex - startIndex];
 
-  Serial.println(startIndex);
-  Serial.println(endIndex);
   for (int i = startIndex; i < endIndex; i++) {
     charCoords[i - startIndex] = CHAR_MAP[i];
   }
@@ -175,8 +174,13 @@ void drillChar(char c) {
   float posCharX = 0.0f;
   float posCharY = 0.0f;
 
-  startDrill();
   for (int i = 0; i < coordLen; i++) {
+    // Start drilling at index 1, since the first index is always the start pos
+    if (i == 1) {
+      startDrill();
+      delay(100); // So it has enough time to spin up
+    }
+
     float xCoord = charCoords[i][0];
     float yCoord = charCoords[i][1];
 
@@ -214,6 +218,8 @@ void stopMove() {
   Y_STEPPER_MOTOR.stop();
 }
 
+// Steps > 0; Move away from the motor
+// Steps < 0; Move towards the motor
 void moveSteps(int xSteps, int ySteps) {
   float* speeds = configureMotors(xSteps, ySteps);
 
@@ -277,11 +283,14 @@ void moveRelativeInCharField(float x, float y) {
   int xSteps = X_STEP_CHAR_COUNT * x;
   int ySteps = Y_STEP_CHAR_COUNT * y;
 
-  positionX += (x * (X_STEP_COUNT / X_STEP_CHAR_COUNT));
-  positionY += (y * (Y_STEP_COUNT / Y_STEP_CHAR_COUNT));
+  float scaleFactor = 1.0;  // This will be replaced with the code from @Christop
+
+  positionX += (x * (X_STEP_COUNT / (X_STEP_CHAR_COUNT * scaleFactor)));
+  positionY += (y * (Y_STEP_COUNT / (Y_STEP_CHAR_COUNT * scaleFactor)));
 
   moveSteps(xSteps, ySteps);
 }
+
 
 // =====================
 /* Drillhead Movement */
@@ -302,6 +311,7 @@ void startDrill() {
   // Insert drive down logic
   drillLowered = true;
 }
+
 
 // =============
 /* Home Logic */
@@ -325,6 +335,8 @@ void calibrateXAxis() {
 }
 
 void calibrateZAxis() {
+  // I'M assuming that the drill is already turned off.
+  // This might need to be fixed
   // Definitely didn't copy paste it
   moveToSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
   moveFromSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
