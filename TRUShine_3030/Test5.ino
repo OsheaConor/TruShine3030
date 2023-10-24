@@ -1,58 +1,10 @@
-//////////////////////
-//Motoren definiert//
-////////////////////
-#define X_MOTOR_DIR_PIN 19
-#define X_MOTOR_STEP_PIN 21
-#define Y_MOTOR_DIR_PIN 15
-#define Y_MOTOR_STEP_PIN 17
-#define Z_MOTOR_DIR_PIN 5
-#define Z_MOTOR_STEP_PIN 18
-//////////////
-//Variablen//
-////////////
+
 float einheit = 1.0/60.0;     //1mm in Koordinate umgerechnet
-int i;                        // nur zum einmaligen teste. Wird bei fertigem Programm nicht mehr benötigt
 ///////////////////////////
 //Variablen für MoveToMP//
 /////////////////////////
 int s = 0;                    //Schritte
 float stepszubox1 = 0;        //Anazhl der Schritte
-void setup() 
-{
-  // put your setup code here, to run once:
-  Serial.begin(115200);
-  pinMode(X_MOTOR_STEP_PIN, OUTPUT);
-  pinMode(X_MOTOR_DIR_PIN, OUTPUT);
-  pinMode(Y_MOTOR_STEP_PIN, OUTPUT);
-  pinMode(Y_MOTOR_DIR_PIN, OUTPUT);
-  pinMode(Z_MOTOR_STEP_PIN, OUTPUT);
-  pinMode(Z_MOTOR_DIR_PIN, OUTPUT);
-}
-//////////////////
-//Main Programm//
-////////////////
-void loop() 
-{
-  // put your main code here, to run repeatedly: 
-  delayMicroseconds(200);
-  int il = letters();
-  int abz = abstand(il);
-  float breite = breiteBox(il, abz);
-  if(il <= 12){
-  firstboxGerade(il,abz,breite,einheit);
-  }
-  // float NeueBox =nextBoxRechnerG(breite, einheit, abz, c1, il);
-  // nextBoxesG(NeueBox,c1,breite,einheit,abz,il );
-  //moveToPlexiX();
-  // if(i == 0){
-  // moveToPlexiY();
-  // i++;
-  // }
-  // if(i==0){
-  //   Ausgabe();
-  //   i++;
-  // }
-}
 //////////////////////////////////
 //Anzahl an Buchstaben erkennen//
 ////////////////////////////////
@@ -134,45 +86,6 @@ float* firstboxGerade(int il, int abz, float breite, float einheit)
 
   return Werte;
 }
-// ///////////////////////////////////////////
-// //Berechnen der Wegstrecke zur neuen Box//
-// /////////////////////////////////////////
-// float nextBoxRechnerG(float breite,float einheit, int abz, float c1,int il)
-//   {
-//     float NeueBox = ((float) breite + 1)* einheit;
-//     //Serial.println(NeueBox);// Cord neue Box (Breite Box+ Abstand) vorrausetzung immer 0.0  
-//     //float box2 = ((float)c1 + NeueBox);
-//     //Serial.println("Cord Box 2");
-//     //Serial.println(box2);
-//     return NeueBox;
-  
-// }
-// ////////////////////////////////////
-// //Berechnung aller weiteren Boxen//
-// //////////////////////////////////
-
-// void nextBoxesG(float NeueBox, float c1, float breite,float einheit, float abz, int il ){
-//    float Werte[il] = {};
-//    while(b < (il-1))
-//    {
-//     float box2 = ((float)c1 + NeueBox);
-//     // Serial.println("Cord Box 3");
-//     // Serial.println(box2);
-//     c1 = box2;
-//     b++;
-//     for(int c=0; c < il;c++)
-//     {
-//       Werte[c] = box2;
-//       Serial.println(Werte[c]); 
-//     }
-    
-//     }
-    
-   
-   
-
-// }
-
 ////////////////////////////////////////////////////////////////////////////////////////
 //X Motor zentrieren, so dass die Platte an der linken Kante unter dem Fräskopf liegt//
 //////////////////////////////////////////////////////////////////////////////////////
