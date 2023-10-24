@@ -74,8 +74,6 @@ static float CHAR_MAP[COORD_AMOUNT][2] = {
 
 
 const float einheit = 1.0/60.0;     //1mm in Koordinate umgerechnet
-int s = 0;                    //Schritte
-float stepszubox1 = 0;        //Anazhl der Schritte
 
 static float positionX = 0.0f;
 static float positionY = 0.0f;
@@ -167,27 +165,12 @@ float breiteBox(int il) {
   return breite;
 }
 
-float moveToMP() {
-  float Mitte = einheit * 30; // Abstand nach links u rechts an die Wand
-  float stepszubox1 = Mitte * X_STEP_COUNT; // 0,5 Punkt erster Box
-  return einheit;
-  while(s < stepszubox1)
-    {
-      // Rewrite with lib
-    digitalWrite(X_MOTOR_STEP_PIN, HIGH);
-    delayMicroseconds(300);
-    digitalWrite(X_MOTOR_STEP_PIN, LOW);
-    delayMicroseconds(300);
-    s++;
-    }
-}
-
 float* firstboxGerade(int il, float breite, float einheit) {
   float b1 = ((float)breite * ((float)il/2)+(((float)(il + 1)/2)-1));//Breite die es zu ersten Box gehe muss
   float c1 = ((float)30-b1)* einheit;//Cord der ersten 0.0 Box
   //Neue Box
   float NeueBox = ((float) breite + 1)* einheit;// Cord neue Box (Breite Box+ Abstand) vorrausetzung immer 0.0  
-  float Werte[il] = {};//verusch des arrays
+  float* Werte = new float[il];//verusch des arrays
   float box2 = c1;
 
   for (int b = 0; b < il; b++) {
@@ -341,24 +324,21 @@ void moveRelativeInCharField(float x, float y) {
   moveSteps(xSteps, ySteps);
 }
 
-void moveToPlexiX()
-{
-  int x;
+void moveToPlexiX() {
   float stepszuplexiX = 0.6 * 100;
-  while(x < stepszuplexiX)
-  {  
-  digitalWrite(X_MOTOR_STEP_PIN, HIGH);
-  delayMicroseconds(300);
-  digitalWrite(X_MOTOR_STEP_PIN, LOW);
-  delayMicroseconds(300);
-  x++;
+  for (int x = 0; x < stepszuplexiX; x++) {
+    // Rewrite with lib
+    digitalWrite(X_MOTOR_STEP_PIN, HIGH);
+    delayMicroseconds(300);
+    digitalWrite(X_MOTOR_STEP_PIN, LOW);
+    delayMicroseconds(300);
   }
+
   delay(5000);
-  float einheit = moveToMP();
+  moveToMP();
 }
 
-void moveToPlexiY()
-{
+void moveToPlexiY() {
   int y;
   float stepszuplexiY = 40 * 100; // Weg * Schritte pro mm
   while(y <= stepszuplexiY)
@@ -371,8 +351,7 @@ void moveToPlexiY()
   }
 }
 
-void zuAusgabe()
-{
+void moveToAusgabe() {
   float ausgabe = 158 * 100;
   int a;
   while(a <= ausgabe)
@@ -383,6 +362,19 @@ void zuAusgabe()
     digitalWrite(Y_MOTOR_STEP_PIN, LOW);
     delayMicroseconds(300);
     a++;
+  }
+}
+
+void moveToMP() {
+  float Mitte = einheit * 30; // Abstand nach links u rechts an die Wand
+  float stepszubox1 = Mitte * X_STEP_COUNT; // 0,5 Punkt erster Box
+  
+  for (int s = 0; s < stepszubox1; s++) {
+    // Rewrite with lib
+    digitalWrite(X_MOTOR_STEP_PIN, HIGH);
+    delayMicroseconds(300);
+    digitalWrite(X_MOTOR_STEP_PIN, LOW);
+    delayMicroseconds(300);
   }
 }
 
