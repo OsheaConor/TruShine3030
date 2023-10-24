@@ -35,6 +35,8 @@
 #define CHAR_AMOUNT 26
 #define COORD_AMOUNT 144
 
+#define MAX_LETTERS 12
+
 AccelStepper X_STEPPER_MOTOR(AccelStepper::DRIVER, X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN);
 AccelStepper Y_STEPPER_MOTOR(AccelStepper::DRIVER, Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN);
 AccelStepper Z_STEPPER_MOTOR(AccelStepper::DRIVER, Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN);
@@ -70,6 +72,10 @@ static float CHAR_MAP[COORD_AMOUNT][2] = {
   {1.0, 0.125}, {0.0, 0.125}, {1.0, 0.875},  {0.0, 0.875}                                                                           //Z[4](140-143)
 };
 
+
+const float einheit = 1.0/60.0;     //1mm in Koordinate umgerechnet
+int s = 0;                    //Schritte
+float stepszubox1 = 0;        //Anazhl der Schritte
 
 static float positionX = 0.0f;
 static float positionY = 0.0f;
@@ -155,6 +161,44 @@ bool isLettersOnly(String txt) {
 	return true;
 }
 
+float breiteBox(int il) {
+  float breite = ((float)(60.0 - (il + 1))/ (float) il );
+  breite = min(breite, (float)7.0);
+  return breite;
+}
+
+float moveToMP() {
+  float Mitte = einheit * 30; // Abstand nach links u rechts an die Wand
+  float stepszubox1 = Mitte * X_STEP_COUNT; // 0,5 Punkt erster Box
+  return einheit;
+  while(s < stepszubox1)
+    {
+      // Rewrite with lib
+    digitalWrite(X_MOTOR_STEP_PIN, HIGH);
+    delayMicroseconds(300);
+    digitalWrite(X_MOTOR_STEP_PIN, LOW);
+    delayMicroseconds(300);
+    s++;
+    }
+}
+
+float* firstboxGerade(int il, float breite, float einheit) {
+  float b1 = ((float)breite * ((float)il/2)+(((float)(il + 1)/2)-1));//Breite die es zu ersten Box gehe muss
+  float c1 = ((float)30-b1)* einheit;//Cord der ersten 0.0 Box
+  //Neue Box
+  float NeueBox = ((float) breite + 1)* einheit;// Cord neue Box (Breite Box+ Abstand) vorrausetzung immer 0.0  
+  float Werte[il] = {};//verusch des arrays
+  float box2 = c1;
+
+  for (int b = 0; b < il; b++) {
+    Werte[b] = (float)box2;
+    box2 = ((float)c1 + NeueBox);//rechnet alle andern Boxen aus (geht, wegen dem array aber muss man programm immer neustarten)
+    c1 = box2;
+  }
+
+  return Werte;
+}
+
 
 // ===================
 /* Drill Char Logic */
@@ -200,8 +244,22 @@ String getUserNameFromConsole() {
   while (Serial.available() == 0) { }
   String name = Serial.readString();
   name.toUpperCase();
+  name.trim();                                 // Enter und co. löschen / remove any \r \n whitespace at the end of the String
   
   return name;
+}
+
+// Returns -1 if name is too long
+int letters(String input) {
+  Serial.println(input);                        //Input printen
+  int il = input.length();                      //Variable für die Anzahl an Buchstaben
+  if(il >= MAX_LETTERS)
+  {
+    Serial.println("Dein Name ist zu lang. Versuch es mit einem Spitznamen");
+    return -1;
+  }
+
+  return il;                                    //il zurückgeben, damit andere Funktionen auf die Variable zugreifen können
 }
 
 
@@ -281,6 +339,51 @@ void moveRelativeInCharField(float x, float y) {
   positionY += (y * (Y_STEP_COUNT / Y_STEP_CHAR_COUNT));
 
   moveSteps(xSteps, ySteps);
+}
+
+void moveToPlexiX()
+{
+  int x;
+  float stepszuplexiX = 0.6 * 100;
+  while(x < stepszuplexiX)
+  {  
+  digitalWrite(X_MOTOR_STEP_PIN, HIGH);
+  delayMicroseconds(300);
+  digitalWrite(X_MOTOR_STEP_PIN, LOW);
+  delayMicroseconds(300);
+  x++;
+  }
+  delay(5000);
+  float einheit = moveToMP();
+}
+
+void moveToPlexiY()
+{
+  int y;
+  float stepszuplexiY = 40 * 100; // Weg * Schritte pro mm
+  while(y <= stepszuplexiY)
+  {
+  digitalWrite(Y_MOTOR_STEP_PIN, HIGH);
+  delayMicroseconds(300);
+  digitalWrite(Y_MOTOR_STEP_PIN, LOW);
+  delayMicroseconds(300);
+  y++;
+  }
+}
+
+void zuAusgabe()
+{
+  float ausgabe = 158 * 100;
+  int a;
+  while(a <= ausgabe)
+  {
+    Serial.println(a);
+    digitalWrite(Y_MOTOR_STEP_PIN, HIGH);
+    delayMicroseconds(300);
+    digitalWrite(Y_MOTOR_STEP_PIN, LOW);
+    delayMicroseconds(300);
+    a++;
+  }
 }
 
 // =====================
