@@ -324,30 +324,40 @@ void moveRelativeInCharField(float x, float y) {
   moveSteps(xSteps, ySteps);
 }
 
+// Moves the drill too 0 0 on the glass board
+void moveToPlexiStart() {
+  gotoHome();
+  delay(200);
+
+  moveToPlexiX();
+  moveToPlexiY();
+
+  positionX = 0.0f;
+  positionY = 0.0f;
+}
+
 void moveToPlexiX() {
   float stepszuplexiX = 0.6 * 100;
-  for (int x = 0; x < stepszuplexiX; x++) {
-    // Rewrite with lib
-    digitalWrite(X_MOTOR_STEP_PIN, HIGH);
-    delayMicroseconds(300);
-    digitalWrite(X_MOTOR_STEP_PIN, LOW);
-    delayMicroseconds(300);
-  }
 
-  delay(5000);
-  moveToMP();
+  X_STEPPER_MOTOR.move(stepszuplexiX);
+  X_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+
+  while (X_STEPPER_MOTOR.distanceToGo() > 0) {
+    X_STEPPER_MOTOR.runSpeed();
+    X_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+  }
 }
 
 void moveToPlexiY() {
-  int y;
+                    // (V------V) Magic values
   float stepszuplexiY = 40 * 100; // Weg * Schritte pro mm
-  while(y <= stepszuplexiY)
-  {
-  digitalWrite(Y_MOTOR_STEP_PIN, HIGH);
-  delayMicroseconds(300);
-  digitalWrite(Y_MOTOR_STEP_PIN, LOW);
-  delayMicroseconds(300);
-  y++;
+
+  Y_STEPPER_MOTOR.move(stepszuplexiY);
+  Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+
+  while (Y_STEPPER_MOTOR.distanceToGo() > 0) {
+    Y_STEPPER_MOTOR.runSpeed();
+    Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
   }
 }
 
@@ -365,18 +375,6 @@ void moveToAusgabe() {
   }
 }
 
-void moveToMP() {
-  float Mitte = einheit * 30; // Abstand nach links u rechts an die Wand
-  float stepszubox1 = Mitte * X_STEP_COUNT; // 0,5 Punkt erster Box
-  
-  for (int s = 0; s < stepszubox1; s++) {
-    // Rewrite with lib
-    digitalWrite(X_MOTOR_STEP_PIN, HIGH);
-    delayMicroseconds(300);
-    digitalWrite(X_MOTOR_STEP_PIN, LOW);
-    delayMicroseconds(300);
-  }
-}
 
 // =====================
 /* Drillhead Movement */
@@ -397,6 +395,7 @@ void startDrill() {
   // Insert drive down logic
   drillLowered = true;
 }
+
 
 // =============
 /* Home Logic */
