@@ -21,6 +21,13 @@
 // Speed in steps/s
 
 #define DRILL_STARTUP_TIME_MS 10000
+#define DRILL_STARTUP_RAISE_STEPS 800
+#define DRILL_CALIBRATE_STEP_TIME_us 500
+// Amount of steps too move up, when calibrating the drills distance too the plate
+#define DRILL_SENSOR_X_STEPS 100
+#define DRILL_SENSOR_Y_STEPS 100
+#define STEPS_TO_PLATE 200
+// Fiktive Werte!
 
 #define X_MOTOR_DIR_PIN 19
 #define X_MOTOR_STEP_PIN 21
@@ -106,34 +113,11 @@ void setup()
   X_STEPPER_MOTOR.setMaxSpeed(DRILL_STEP_SPEED);
   Y_STEPPER_MOTOR.setMaxSpeed(DRILL_STEP_SPEED);
 
-  digitalWrite(4, HIGH);
+  calibrateDrillDistance();
 }
 
 void loop()
 {
-  long startMillis = millis();
-  long runMillis = 0;
-
-  while (runMillis < DRILL_STARTUP_TIME_MS) {
-    analogWrite(DRILL_MOTOR_POWER_PIN, (255 * ((float) runMillis / (float) DRILL_STARTUP_TIME_MS)));
-    runMillis = (millis() - startMillis);
-  }
-
-
-  delay(10000);
-  stopDrill();
-  delay(3000);
-
-  /*
-  delay(3000);
-  Serial.println("Restarting");
-  startDrill();
-  Serial.println("Start done");
-  delay(5000);
-  Serial.println("Stop");
-  stopDrill();
-  delay(20000);
-  */
 }
 
 
@@ -285,8 +269,8 @@ void stopMove() {
   Y_STEPPER_MOTOR.stop();
 }
 
-void moveSteps(int xSteps, int ySteps) {
-  float* speeds = configureMotors(xSteps, ySteps);
+void moveSteps(int xSteps, int ySteps, int maxSpeed) {
+  float* speeds = configureMotors(xSteps, ySteps, maxSpeed);
 
   float xSpeed = speeds[0];
   float ySpeed = speeds[1];
@@ -311,21 +295,21 @@ void moveSteps(int xSteps, int ySteps) {
   Y_STEPPER_MOTOR.setPinsInverted(false, false, false);
 }
 
-float* configureMotors(int xSteps, int ySteps) {
+float* configureMotors(int xSteps, int ySteps, int maxSpeed) {
   bool xHigh = (abs(xSteps) > abs(ySteps)) ? true : false;
   AccelStepper* throttledMotor = (xHigh) ? &Y_STEPPER_MOTOR : &X_STEPPER_MOTOR;
   AccelStepper* nonThrottledMotor = (xHigh) ? &X_STEPPER_MOTOR : &Y_STEPPER_MOTOR;
   float throttle = (xHigh) ? ((float) ySteps / (float) xSteps) : ((float) xSteps / (float) ySteps);
   throttle = abs(throttle);
 
-  float throttledMotorSpeed = (DRILL_STEP_SPEED * throttle);
+  float throttledMotorSpeed = (maxSpeed * throttle);
   throttledMotor->setSpeed(throttledMotorSpeed);
   throttledMotor->setAcceleration(throttledMotorSpeed);
 
-  nonThrottledMotor->setSpeed(DRILL_STEP_SPEED);
+  nonThrottledMotor->setSpeed(maxSpeed);
   
-  float xSpeed = (xHigh) ? DRILL_STEP_SPEED : throttledMotorSpeed;
-  float ySpeed = (xHigh) ? throttledMotorSpeed : DRILL_STEP_SPEED;
+  float xSpeed = (xHigh) ? maxSpeed : throttledMotorSpeed;
+  float ySpeed = (xHigh) ? throttledMotorSpeed : maxSpeed;
 
   return new float[2] {xSpeed, ySpeed};
 }
@@ -337,7 +321,7 @@ void moveRelativeOnBoard(float x, float y) {
   positionX += x;
   positionY += y;
 
-  moveSteps(xSteps, ySteps);
+  moveSteps(xSteps, ySteps, MOVE_STEP_SPEED);
 }
 
 void moveToOnBoard(float x, float y) {
@@ -351,7 +335,7 @@ void moveRelativeInCharField(float x, float y) {
   positionX += (x * (X_STEP_COUNT / X_STEP_CHAR_COUNT));
   positionY += (y * (Y_STEP_COUNT / Y_STEP_CHAR_COUNT));
 
-  moveSteps(xSteps, ySteps);
+  moveSteps(xSteps, ySteps, DRILL_STEP_SPEED);
 }
 
 // Moves the drill too 0 0 on the glass board
@@ -367,14 +351,15 @@ void moveToPlexiStart() {
 }
 
 void moveToPlexiX() {
+                    // (V-------V) Magic values
   float stepszuplexiX = 0.6 * 100;
 
   X_STEPPER_MOTOR.move(stepszuplexiX);
-  X_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+  X_STEPPER_MOTOR.setSpeed(MOVE_STEP_SPEED);
 
   while (X_STEPPER_MOTOR.distanceToGo() > 0) {
     X_STEPPER_MOTOR.runSpeed();
-    X_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+    X_STEPPER_MOTOR.setSpeed(MOVE_STEP_SPEED);
   }
 }
 
@@ -383,26 +368,23 @@ void moveToPlexiY() {
   float stepszuplexiY = 40 * 100; // Weg * Schritte pro mm
 
   Y_STEPPER_MOTOR.move(stepszuplexiY);
-  Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+  Y_STEPPER_MOTOR.setSpeed(MOVE_STEP_SPEED);
 
   while (Y_STEPPER_MOTOR.distanceToGo() > 0) {
     Y_STEPPER_MOTOR.runSpeed();
-    Y_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+    Y_STEPPER_MOTOR.setSpeed(MOVE_STEP_SPEED);
   }
 }
 
 void moveToAusgabe() {
+  stopMove();
+  delay(1000);
+  stopDrill();
+  delay(1000);
+
+              // (V-------V) Magic values
   float ausgabe = 158 * 100;
-  int a;
-  while(a <= ausgabe)
-  {
-    Serial.println(a);
-    digitalWrite(Y_MOTOR_STEP_PIN, HIGH);
-    delayMicroseconds(300);
-    digitalWrite(Y_MOTOR_STEP_PIN, LOW);
-    delayMicroseconds(300);
-    a++;
-  }
+  moveSteps(0, ausgabe, MOVE_STEP_SPEED);
 }
 
 
@@ -424,16 +406,10 @@ void stopDrill() {
   digitalWrite(DRILL_ENABLE_PIN, LOW);
   analogWrite(DRILL_MOTOR_POWER_PIN, 0);
 
-  // Weird workaround
-  // Bewegt sich gleich hoch
-  calibrateYAxis();
-  drillLowered = false;
+  raiseDrill();
 }
 
 void startDrill() {
-  // Insert drive down logic
-  drillLowered = true;
-
   digitalWrite(DRILL_ENABLE_PIN, HIGH);
 
   long startMillis = millis();
@@ -443,7 +419,48 @@ void startDrill() {
     analogWrite(DRILL_MOTOR_POWER_PIN, (255 * ((float) runMillis / (float) DRILL_STARTUP_TIME_MS)));
     runMillis = (millis() - startMillis);
   }
+
+  moveDrillHeight(-STEPS_TO_PLATE);
+  drillLowered = true;
 }
+
+void raiseDrill() {
+  moveDrillHeight(STEPS_TO_PLATE);
+  drillLowered = false;
+}
+
+// This method should only ever have too be run once
+// Calibrate distance from the drill head too the glass
+void calibrateDrillDistance() {
+  moveDrillHeight(DRILL_STARTUP_RAISE_STEPS);
+
+  // Hopefully the drill will be far enough up, as too not snap when moving around ._.
+  gotoHome();
+
+  // Move to the Z Sensor placed on the plate
+  // Note; I'm moving the plate here using "#moveSteps", having a precise home-point is crucial!
+  moveSteps(DRILL_SENSOR_X_STEPS, DRILL_SENSOR_Y_STEPS, MOVE_STEP_SPEED);
+  delay(500);
+
+  moveToSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveFromSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveToSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  moveFromSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+}
+
+void moveDrillHeight(uint steps) {
+  Z_STEPPER_MOTOR.move(steps);
+  Z_STEPPER_MOTOR.setPinsInverted((steps < 0), false, false);
+  Z_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+
+  while (Z_STEPPER_MOTOR.distanceToGo() > 0) {
+    Z_STEPPER_MOTOR.runSpeed();
+    Z_STEPPER_MOTOR.setSpeed(DRILL_STEP_SPEED);
+  }
+
+  Z_STEPPER_MOTOR.setPinsInverted(false, false, false);
+}
+
 
 
 // =============
@@ -456,7 +473,6 @@ void gotoHome() {
 
   calibrateXAxis();
   calibrateYAxis();
-  calibrateZAxis();
 }
 
 void calibrateXAxis() {
@@ -465,14 +481,6 @@ void calibrateXAxis() {
   moveFromSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED);
   moveToSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
   moveFromSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
-}
-
-void calibrateZAxis() {
-  // Definitely didn't copy paste it
-  moveToSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveFromSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveToSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
 }
 
 void calibrateYAxis() {
