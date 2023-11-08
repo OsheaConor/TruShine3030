@@ -15,16 +15,15 @@ static const String DEVICE_NAME = "ESP32-BT-Slave";
 
 // Eine rev des Stepper motors braucht 800 steps 
 
-#define X_STEP_COUNT 800
-#define Y_STEP_COUNT 400
+#define X_STEP_COUNT 60000
+#define Y_STEP_COUNT 4000
 
-#define X_STEP_CHAR_COUNT 50
-#define Y_STEP_CHAR_COUNT 100
-// Fiktive Werte!
+#define X_STEP_CHAR_COUNT 700
+#define Y_STEP_CHAR_COUNT 1400
+// Reale Werte
 
 #define MOTOR_SLOW_STEP_SPEED 800
 #define MOTOR_SLOW_STEP_FACTOR 8
-// Zahlen müssen nochmal überarbeitet werden!
 // MOTOR_SLOW_STEP_FACTOR besagt, wie viel langsamer der Motor sich bewegen muss, wenn er beim Kalibrieren von dem Schalter weg fährt.
 // Werte in steps/s
 
@@ -143,9 +142,6 @@ void loop()
   // Drill chars
   float* charStartingPoints = firstboxGerade(s.length());
   for (int i = 0; i < s.length(); i++) {
-    positionX = 0.0f;
-    positionY = 0.0f;
-
     char c = chars[i];
     float charStart = charStartingPoints[i];
 
@@ -292,6 +288,15 @@ String getUserName() {
   }
 
   return "";
+}
+
+String getUserNameFromConsole() {
+  while (Serial.available() == 0) { }
+  String name = Serial.readString();
+  name.toUpperCase();
+  name.trim();                                 // Enter und co. löschen / remove any \r \n whitespace at the end of the String
+  
+  return name;
 }
 
 
