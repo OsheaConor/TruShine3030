@@ -15,7 +15,7 @@ static const String DEVICE_NAME = "ESP32-BT-Slave";
 
 // Eine rev des Stepper motors braucht 800 steps 
 
-#define X_STEP_COUNT 60000
+#define X_STEP_COUNT 6000
 #define Y_STEP_COUNT 4000
 
 #define X_STEP_CHAR_COUNT 700
