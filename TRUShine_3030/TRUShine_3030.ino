@@ -1,4 +1,17 @@
 #include <AccelStepper.h>
+#include "BluetoothSerial.h"
+
+static const String DEVICE_NAME = "ESP32-BT-Slave";
+
+// Check if Bluetooth is available
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+  #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#endif
+
+// Check Serial Port Profile
+#if !defined(CONFIG_BT_SPP_ENABLED)
+  #error Serial Port Profile for Bluetooth is not available or not enabled. It is only available for the ESP32 chip.
+#endif
 
 // Eine rev des Stepper motors braucht 800 steps 
 
@@ -9,8 +22,8 @@
 #define Y_STEP_CHAR_COUNT 100
 // Fiktive Werte!
 
-#define MOTOR_SLOW_STEP_SPEED 100
-#define MOTOR_SLOW_STEP_FACTOR 2
+#define MOTOR_SLOW_STEP_SPEED 800
+#define MOTOR_SLOW_STEP_FACTOR 8
 // Zahlen müssen nochmal überarbeitet werden!
 // MOTOR_SLOW_STEP_FACTOR besagt, wie viel langsamer der Motor sich bewegen muss, wenn er beim Kalibrieren von dem Schalter weg fährt.
 // Werte in steps/s
@@ -48,11 +61,13 @@
 
 #define MAX_LETTERS 12
 
+BluetoothSerial SerialBT;
 AccelStepper X_STEPPER_MOTOR(AccelStepper::DRIVER, X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN);
 AccelStepper Y_STEPPER_MOTOR(AccelStepper::DRIVER, Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN);
 AccelStepper Z_STEPPER_MOTOR(AccelStepper::DRIVER, Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN);
 
-static uint CHAR_INDEXES[CHAR_AMOUNT] = {0, 6, 14, 18, 27, 34, 40, 45, 51, 53, 58, 65, 69, 75, 81, 86, 91, 100, 106, 112, 116, 120, 123, 130, 135, 140};
+                                      // A  B  C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R    S    T    U    V    W    X    Y    Z
+static uint CHAR_INDEXES[CHAR_AMOUNT] = {0, 6, 14, 18, 27, 34, 40, 46, 52, 54, 59, 65, 68, 75, 81, 86, 91, 100, 106, 112, 116, 120, 123, 130, 135, 140};
 
 static float CHAR_MAP[COORD_AMOUNT][2] = {
   {0.0, 0.125}, {0.0, 0.875}, {1.0, 0.875},  {1.0, 0.125},  {1.0, 0.5},    {0.0, 0.5},                                              //A[6] (0-5)
@@ -64,7 +79,7 @@ static float CHAR_MAP[COORD_AMOUNT][2] = {
   {0.5, 0.5},   {1.0, 0.5},   {1.0, 0.125},  {0.0, 0.125},  {0.0, 0.875},  {1.0, 0.875},                                            //G[6] (40-45)
   {0.0, 0.125}, {0.0, 0.875}, {0.0, 0.5},    {1.0, 0.5},    {1.0, 0.875},  {1.0, 0.125},                                            //H[6] (46-51)
   {0.5, 0.125}, {0.5, 0.875},                                                                                                       //I[2] (52-53)
-  {0.0, 0.25},  {0.0, 0.125}, {1.0, 0.125},  {1.0, 0.875},  {0.0, 0.875},                                                           //J[5] (54-58)
+  {0.0, 0.25},  {0.0, 0.125}, {1.0, 0.125},  {1.0, 1.0},  {0.0, 1.0},                                                               //J[5] (54-58)
   {0.0, 0.125}, {0.0, 0.875}, {0.0, 0.5},    {0.75, 0.875}, {0.0, 0.5}, {0.75, 0.125},                                              //K[6] (59-64)
   {1.0, 0.125}, {0.0, 0.125}, {0.0, 0.875},                                                                                         //L[3] (65-67)
   {0.0, 0.125}, {0.0, 0.875}, {0.5, 0.875},  {0.5, 0.5},    {0.5, 0.875},  {1.0, 0.875}, {1.0, 0.125},                              //M[7] (68-74)
@@ -93,6 +108,7 @@ static bool drillLowered = false;
 void setup()
 {
   Serial.begin(115200);
+  SerialBT.begin(DEVICE_NAME);
 
   pinMode(X_MOTOR_STEP_PIN, OUTPUT);
   pinMode(X_MOTOR_DIR_PIN, OUTPUT);
@@ -108,16 +124,41 @@ void setup()
   pinMode(Y_SENSOR, INPUT);
   pinMode(Z_SENSOR, INPUT);
 
-  X_STEPPER_MOTOR.setAcceleration(DRILL_STEP_SPEED);
-  Y_STEPPER_MOTOR.setAcceleration(DRILL_STEP_SPEED);
-  X_STEPPER_MOTOR.setMaxSpeed(DRILL_STEP_SPEED);
-  Y_STEPPER_MOTOR.setMaxSpeed(DRILL_STEP_SPEED);
+  X_STEPPER_MOTOR.setMaxSpeed(MOVE_STEP_SPEED);
+  Y_STEPPER_MOTOR.setMaxSpeed(MOVE_STEP_SPEED);
 
-  calibrateDrillDistance();
+  // calibrateDrillDistance();
 }
 
 void loop()
 {
+  // Setup user name/char array
+  String s = getUserName();
+  char* chars = new char[s.length() + 1];
+  strcpy(chars, s.c_str());
+
+  // Setup
+  moveToPlexiStart();
+
+  // Drill chars
+  float* charStartingPoints = firstboxGerade(s.length());
+  for (int i = 0; i < s.length(); i++) {
+    positionX = 0.0f;
+    positionY = 0.0f;
+
+    char c = chars[i];
+    float charStart = charStartingPoints[i];
+
+    moveToOnBoard(charStart, 0.2f);
+    delay(200);
+    drillChar(c);
+    delay(500);
+  }
+
+  // Finish
+  delay(2000);
+  moveToAusgabe();
+  delay(2000);
 }
 
 
@@ -179,9 +220,12 @@ float breiteBox(int il) {
   return breite;
 }
 
-float* firstboxGerade(int il, float breite, float einheit) {
+float* firstboxGerade(int il) {
+  float einheit = (1.0 / 60.0);
+  float breite = breiteBox(il);
+
   float b1 = ((float)breite * ((float)il/2)+(((float)(il + 1)/2)-1));//Breite die es zu ersten Box gehe muss
-  float c1 = ((float)30-b1)* einheit;//Cord der ersten 0.0 Box
+  float c1 = (((float)30-b1) * einheit);//Cord der ersten 0.0 Box
   //Neue Box
   float NeueBox = ((float) breite + 1)* einheit;// Cord neue Box (Breite Box+ Abstand) vorrausetzung immer 0.0  
   float* Werte = new float[il];//verusch des arrays
@@ -206,9 +250,6 @@ void drillChar(char c) {
   // Get scaling factor of char fields
   // Christophs functions
 
-  // Move to 0 0 of the char field
-  // moveToOnBoard(getCharOrigin(charIndex), someConstYValue);  <Pseudo>
-
   // Assuming that the drill is at (0 0) of the char field:
   float** charCoords = charTooCoords(c);
   uint coordLen = getCoordLength(c);
@@ -216,7 +257,7 @@ void drillChar(char c) {
   float posCharX = 0.0f;
   float posCharY = 0.0f;
 
-  startDrill();
+  // startDrill();
   for (int i = 0; i < coordLen; i++) {
     float xCoord = charCoords[i][0];
     float yCoord = charCoords[i][1];
@@ -228,6 +269,8 @@ void drillChar(char c) {
   }
 
   stopMove();
+  delay(200);
+  moveSteps(0, -800, 800);
   stopDrill();
 }
 
@@ -237,26 +280,18 @@ void drillChar(char c) {
 /* Muss zu USB oder anderem umgeändert werden! */
 // ==============================================
 
-String getUserNameFromConsole() {
-  while (Serial.available() == 0) { }
-  String name = Serial.readString();
-  name.toUpperCase();
-  name.trim();                                 // Enter und co. löschen / remove any \r \n whitespace at the end of the String
-  
-  return name;
-}
-
-// Returns -1 if name is too long
-int letters(String input) {
-  Serial.println(input);                        //Input printen
-  int il = input.length();                      //Variable für die Anzahl an Buchstaben
-  if(il >= MAX_LETTERS)
-  {
-    Serial.println("Dein Name ist zu lang. Versuch es mit einem Spitznamen");
-    return -1;
+String getUserName() {
+  while (true) {
+    if (!SerialBT.available()) continue;
+    
+    String s = SerialBT.readString();
+    if (s.endsWith("~")) {
+      s.remove(s.length() - 1);
+      return s;
+    }
   }
 
-  return il;                                    //il zurückgeben, damit andere Funktionen auf die Variable zugreifen können
+  return "";
 }
 
 
@@ -297,8 +332,8 @@ void moveSteps(int xSteps, int ySteps, int maxSpeed) {
 
 float* configureMotors(int xSteps, int ySteps, int maxSpeed) {
   bool xHigh = (abs(xSteps) > abs(ySteps)) ? true : false;
-  AccelStepper* throttledMotor = (xHigh) ? &Y_STEPPER_MOTOR : &X_STEPPER_MOTOR;
-  AccelStepper* nonThrottledMotor = (xHigh) ? &X_STEPPER_MOTOR : &Y_STEPPER_MOTOR;
+  AccelStepper* throttledMotor = (xHigh) ? &Y_STEPPER_MOTOR: &X_STEPPER_MOTOR;
+  AccelStepper* nonThrottledMotor = (xHigh) ? &X_STEPPER_MOTOR: &Y_STEPPER_MOTOR;
   float throttle = (xHigh) ? ((float) ySteps / (float) xSteps) : ((float) xSteps / (float) ySteps);
   throttle = abs(throttle);
 
@@ -353,37 +388,25 @@ void moveToPlexiStart() {
 void moveToPlexiX() {
                     // (V-------V) Magic values
   float stepszuplexiX = 0.6 * 100;
-
-  X_STEPPER_MOTOR.move(stepszuplexiX);
-  X_STEPPER_MOTOR.setSpeed(MOVE_STEP_SPEED);
-
-  while (X_STEPPER_MOTOR.distanceToGo() > 0) {
-    X_STEPPER_MOTOR.runSpeed();
-    X_STEPPER_MOTOR.setSpeed(MOVE_STEP_SPEED);
-  }
+  moveSteps(stepszuplexiX, 0, MOVE_STEP_SPEED);
 }
 
 void moveToPlexiY() {
                     // (V------V) Magic values
   float stepszuplexiY = 40 * 100; // Weg * Schritte pro mm
-
-  Y_STEPPER_MOTOR.move(stepszuplexiY);
-  Y_STEPPER_MOTOR.setSpeed(MOVE_STEP_SPEED);
-
-  while (Y_STEPPER_MOTOR.distanceToGo() > 0) {
-    Y_STEPPER_MOTOR.runSpeed();
-    Y_STEPPER_MOTOR.setSpeed(MOVE_STEP_SPEED);
-  }
+  moveSteps(0, stepszuplexiY, MOVE_STEP_SPEED);
 }
 
 void moveToAusgabe() {
   stopMove();
   delay(1000);
-  stopDrill();
+  // stopDrill();
+  delay(1000);
+  gotoHome();
   delay(1000);
 
               // (V-------V) Magic values
-  float ausgabe = 158 * 100;
+  float ausgabe = 140 * 100;
   moveSteps(0, ausgabe, MOVE_STEP_SPEED);
 }
 
@@ -395,6 +418,7 @@ void moveToAusgabe() {
 void stopDrill() {
   stopMove();
 
+  /*
   long startMillis = millis();
   long runMillis = 0;
 
@@ -407,9 +431,11 @@ void stopDrill() {
   analogWrite(DRILL_MOTOR_POWER_PIN, 0);
 
   raiseDrill();
+  */
 }
 
 void startDrill() {
+  /*
   digitalWrite(DRILL_ENABLE_PIN, HIGH);
 
   long startMillis = millis();
@@ -422,9 +448,12 @@ void startDrill() {
 
   moveDrillHeight(-STEPS_TO_PLATE);
   drillLowered = true;
+  */
 }
 
 void raiseDrill() {
+  // There is no check here...
+  // I just believe... that it won't break :)
   moveDrillHeight(STEPS_TO_PLATE);
   drillLowered = false;
 }
@@ -478,7 +507,7 @@ void gotoHome() {
 void calibrateXAxis() {
   // Move to sensor; Move away; Move towards... slower; Move away... slower
   moveToSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveFromSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveSteps(200, 0, MOTOR_SLOW_STEP_SPEED);
   moveToSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
   moveFromSensor(&X_STEPPER_MOTOR, X_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
 }
@@ -486,7 +515,7 @@ void calibrateXAxis() {
 void calibrateYAxis() {
   // Definitely didn't copy paste it... I would never!
   moveToSensor(&Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveFromSensor(&Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED);
+  moveSteps(0, 200, MOTOR_SLOW_STEP_SPEED);
   moveToSensor(&Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
   moveFromSensor(&Y_STEPPER_MOTOR, Y_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
 }
