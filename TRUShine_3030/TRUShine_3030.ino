@@ -145,7 +145,7 @@ void loop()
     char c = chars[i];
     float charStart = charStartingPoints[i];
 
-    moveToOnBoard(charStart, 0.2f);
+    moveToOnBoard(charStart, 0.3f);
     delay(200);
     drillChar(c);
     delay(500);
@@ -170,8 +170,6 @@ float** charTooCoords(char c) {
   uint endIndex = startIndex + getCoordLength(c);
   float** charCoords = new float* [endIndex - startIndex];
 
-  Serial.println(startIndex);
-  Serial.println(endIndex);
   for (int i = startIndex; i < endIndex; i++) {
     charCoords[i - startIndex] = CHAR_MAP[i];
   }
@@ -266,8 +264,11 @@ void drillChar(char c) {
 
   stopMove();
   delay(200);
-  moveSteps(0, -800, 800);
   stopDrill();
+  delay(200);
+
+  // Reset to bottom right corner
+  moveRelativeInCharField((1.0 - posCharX), -posCharY);
 }
 
 
@@ -372,8 +373,8 @@ void moveRelativeInCharField(float x, float y) {
   int xSteps = X_STEP_CHAR_COUNT * x;
   int ySteps = Y_STEP_CHAR_COUNT * y;
 
-  positionX += (x * (X_STEP_COUNT / X_STEP_CHAR_COUNT));
-  positionY += (y * (Y_STEP_COUNT / Y_STEP_CHAR_COUNT));
+  positionX += ((float) xSteps / (float) X_STEP_COUNT);
+  positionY += ((float) ySteps / (float) Y_STEP_COUNT);
 
   moveSteps(xSteps, ySteps, DRILL_STEP_SPEED);
 }
@@ -392,7 +393,7 @@ void moveToPlexiStart() {
 
 void moveToPlexiX() {
                     // (V-------V) Magic values
-  float stepszuplexiX = 0.6 * 100;
+  float stepszuplexiX = 2.3 * 100;
   moveSteps(stepszuplexiX, 0, MOVE_STEP_SPEED);
 }
 
