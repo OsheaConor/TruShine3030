@@ -3,6 +3,14 @@
 
 static const String DEVICE_NAME = "ESP32-BT-Slave";
 
+static const char BT_USER_NAME_END_TOKEN = '~';
+static const char BT_RESET_TOKEN = '!';
+static const char BT_OUTPUT_TOKEN = '>';
+
+static const char BT_CHAR_FINISHED = '&';
+static const char BT_NAME_FINISHED = '/';
+
+
 // Check if Bluetooth is available
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
   #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
@@ -126,30 +134,20 @@ void setup()
   X_STEPPER_MOTOR.setMaxSpeed(MOVE_STEP_SPEED);
   Y_STEPPER_MOTOR.setMaxSpeed(MOVE_STEP_SPEED);
 
+  // startCommandInputListener();
   // calibrateDrillDistance();
 }
 
 void loop()
 {
-  // Setup user name/char array
+  // Setup
   String s = getUserName();
   char* chars = new char[s.length() + 1];
   strcpy(chars, s.c_str());
-
-  // Setup
   moveToPlexiStart();
 
-  // Drill chars
-  float* charStartingPoints = firstboxGerade(s.length());
-  for (int i = 0; i < s.length(); i++) {
-    char c = chars[i];
-    float charStart = charStartingPoints[i];
-
-    moveToOnBoard(charStart, 0.3f);
-    delay(200);
-    drillChar(c);
-    delay(500);
-  }
+  // Main
+  drillUserName(chars, s.length());
 
   // Finish
   delay(2000);
@@ -234,10 +232,64 @@ float* firstboxGerade(int il) {
   return Werte;
 }
 
+void reset() {
+  stopAll();  // Also raises the drill! Might cause issues due to it though...
+  delay(500);
+  gotoHome();
+}
+
+void stopAll() {
+  stopMove();
+  delay(2000);
+  stopDrill();
+}
+
+
+// =======================
+/* BT Web Command input */
+// =======================
+
+  void startCommandInputListener() {
+    // Missing the functionality too run this code async via Interrupts
+    // Don't know if that's possible with BT, since there's no pin state change
+    // Also this will probably run over an interrupt. So it'll continue after the interrupt...
+    // which is bad. It should go back to the "loop"
+    
+    String cmdToken = SerialBT.readString();
+    if(cmdToken.length() > 1) return;   // A cmdToken should only be a single char!
+
+    char token = cmdToken.charAt(0);
+    switch (token) {
+      case BT_RESET_TOKEN:
+        reset();
+        break;
+      
+      case BT_OUTPUT_TOKEN:
+        moveToAusgabe();
+        break;
+    }
+  }
+
 
 // ===================
 /* Drill Char Logic */
 // ===================
+
+void drillUserName(char* name, int nameLen) {
+  float* charStartingPoints = firstboxGerade(nameLen);
+  for (int i = 0; i < nameLen; i++) {
+    char c = name[i];
+    float charStart = charStartingPoints[i];
+
+    moveToOnBoard(charStart, 0.3f);
+    delay(200);
+    drillChar(c);
+    SerialBT.write(BT_CHAR_FINISHED);
+    delay(500);
+  }
+
+  SerialBT.write(BT_NAME_FINISHED);
+}
 
 void drillChar(char c) {
   // Get the (0 0) coords of the char field.
@@ -282,7 +334,7 @@ String getUserName() {
     if (!SerialBT.available()) continue;
     
     String s = SerialBT.readString();
-    if (s.endsWith("~")) {
+    if (s.endsWith(String(BT_USER_NAME_END_TOKEN))) {
       s.remove(s.length() - 1);
       return s;
     }
@@ -404,7 +456,7 @@ void moveToPlexiY() {
 }
 
 void moveToAusgabe() {
-  stopMove();
+  stopAll();
   delay(1000);
   // stopDrill();
   delay(1000);
