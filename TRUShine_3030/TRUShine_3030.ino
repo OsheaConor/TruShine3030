@@ -490,47 +490,31 @@ void moveToAusgabe() {
 void stopDrill() {
   stopMove();
 
-  
-  long startMillis = millis();
-  long runMillis = 0;
-
-  while (runMillis < DRILL_STARTUP_TIME_MS) {
-    analogWrite(DRILL_MOTOR_POWER_PIN, 255 - (255 * ((float) runMillis / (float) DRILL_STARTUP_TIME_MS)));
-    runMillis = (millis() - startMillis);
+  digitalWrite(DRILL_ENABLE_PIN, HIGH);
+  int n = digitalRead(DRILL_ENABLE_PIN);  // Make sure that if the drill already moves, 
+  while(n > 0){
+    analogWrite(DRILL_MOTOR_POWER_PIN, n);
+    delay(DRILL_STARTUP_TIME_MS / 255);
+    n--;
   }
 
   digitalWrite(DRILL_ENABLE_PIN, LOW);
   analogWrite(DRILL_MOTOR_POWER_PIN, 0);
 
- // raiseDrill();
-  
+ raiseDrill(); 
 }
 
 void startDrill() {
-  
   digitalWrite(DRILL_ENABLE_PIN, HIGH);
+  int n = digitalRead(DRILL_ENABLE_PIN);  // Make sure that if the drill already moves, 
+  while(n < 255){
+    analogWrite(DRILL_MOTOR_POWER_PIN, n);
+    delay(DRILL_STARTUP_TIME_MS / 255);
+    n++;
+  }
 
-  long startMillis = millis();
-  long runMillis = 0;
-
- // while (runMillis < DRILL_STARTUP_TIME_MS) {
-    //analogWrite(DRILL_MOTOR_POWER_PIN, (255 * ((float) runMillis / (float) DRILL_STARTUP_TIME_MS)));
-    //runMillis = (millis() - startMillis);
- // }
- 
- int n = 0;
-while(n < 255){
-  analogWrite(DRILL_MOTOR_POWER_PIN, n);
-  delay(39);
-  n++;
-}
-
-
-
-
-  // moveDrillHeight(-STEPS_TO_PLATE);
-  // drillLowered = true;
-  
+  moveDrillHeight(-STEPS_TO_PLATE);
+  drillLowered = true;
 }
 
 void raiseDrill() {
