@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+    
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oxygen&display=swap" rel="stylesheet">
+
+    <script src="{{url_for('static', filename='test.js')}}"></script>
+
+<title>TruShine3030</title>
+</head>
+<body>
+    
+    <div class="Menu">
+        <div class="nav">
+            
+            <ul class="links">
+                <li><a href="https://www.trumpf.com/de_DE/karriere/">TRUMPF</a></li>
+                <li><a href="/Home">Home</a></li>
+                <li><a href="/Idee">Idee</a></li>
+                <li><a href="/About">About us</a></li>
+                <li><a href="/Kontakt">Kontakt</a></li>
+            </ul>
+            <div class="logo">
+            <a href="https://www.trumpf.com/de_DE/"><img src="{{url_for('static', filename='Trumpf.png')}}" alt="Logo" height="30" width="30"></a>
+            </div>
+
+        </div>
+    </div>
+    <div class="Text1">
+        <p>Hier können Sie Ihren Namen eintragen. Bitte beachten Sie, dass der eingegebene Name maximal 12 Buchstaben enthalten darf.<br>
+            Nachdem Sie den Namen eingegeben haben, drücken Sie bitte auf Senden. 
+        </p>
+    </div>
+    <form id="form-name" method="POST" action="{{ url_for('submit') }}">
+     <div class="Input">
+        <input class="Name" placeholder="Name" type="text" name="Name" id="Name" maxlength="12" pattern="[a-zA-Z\s]+">
+    </div> 
+    
+</form>
+<div class="Senden">
+    <button onclick="getInputValue();" ><span class="bttn"></span>Senden</Button>
+</div>
+    
+    
+    
+    <div class="Text1">
+        <p>Platzhalter</p>
+    </div>
+    <div class="bottom">
+        <ul>
+            <li><figure>
+                <a href="Reset"><img src="{{url_for('static', filename='Reset.png')}}" height="60" width="60" alt="logo"></a>
+                <figcaption><a href="Reset">Reset</a></figcaption>
+                </figure>
+            </li>
+            <li><figure>
+                <a href="Notstop"><img src="{{url_for('static', filename='Notstop.png')}}" height="60" width="60" alt="logo"></a>
+                <figcaption><a href="Notstop">Notstop</a></figcaption>
+              </figure>
+            </li>
+            <li><figure>
+                <a href="Ausgabe"><img src="{{url_for('static', filename='Ausgabe.png')}}" height="60" width="60" alt="logo"></a>
+                <figcaption><a href="Ausgabe">Ausgabe</a></figcaption>
+              </figure>
+            </li>
+        </ul>
+    </div>
+</body>

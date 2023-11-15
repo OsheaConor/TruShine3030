@@ -141,32 +141,32 @@ void setup()
 int i;
 void loop()
   {
-//   if(Serial.available()) {
-//     SerialBT.write(Serial.readString().charAt(0));
-//   }
+  if(Serial.available()) {
+    SerialBT.write(Serial.readString().charAt(0));
+  }
  
-//   if(SerialBT.available()) {
-//     Serial.println(SerialBT.readString());
-//   }
+  if(SerialBT.available()) {
+    Serial.println(SerialBT.readString());
+  }
   // Setup
-  String s = getUserName();
-  char* chars = new char[s.length() + 1];
-  strcpy(chars, s.c_str());
+  // String s = getUserName();
+  // char* chars = new char[s.length() + 1];
+  // strcpy(chars, s.c_str());
   
-  moveToPlexiStart();
+  // moveToPlexiStart();
   
-  // // startDrill();
-  // // delay(10000);
-  // // stopDrill();
+  // // // startDrill();
+  // // // delay(10000);
+  // // // stopDrill();
     
 
-  //Main
-  drillUserName(chars, s.length());
+  // //Main
+  // drillUserName(chars, s.length());
 
-  // Finish
-  delay(2000);
-  moveToAusgabe();
-  delay(2000);
+  // // Finish
+  // delay(2000);
+  // moveToAusgabe();
+  // delay(2000);
 }
 
 

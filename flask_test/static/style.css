@@ -1,0 +1,421 @@
+* {
+    padding: 0px;
+    margin: 0px;
+    box-sizing: border-box;
+}
+
+.nav {
+    display: flex;
+    min-height: 2vh;
+    background-color: #202020;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Quicksand', sans-serif;
+    box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+.links {
+    display: flex;
+    justify-content: space-around;
+    width: 27%;
+    height: 23px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.links a {
+    text-decoration: none;
+    color: #d0ccd0;
+    letter-spacing: 1px;
+    align-items: right;
+    font-size: 14px;
+    font-weight: bold;
+    justify-content: center;
+}
+
+.links a-rumbl {
+    font-family: 'Oxygen', sans-serif;
+}
+
+.links li :hover {
+    color: #f2f2f2;
+    transition: .3s;
+    border-radius: 25px;
+    width: 100px;
+}
+
+.nav li {
+    list-style: none;
+}
+
+.logo {
+    text-decoration: none;
+    font-weight: bold;
+    letter-spacing: 2px;
+    justify-content: right;
+    padding-right: 3vw;
+}
+
+.logo a {
+    text-decoration: none;
+    font-size: 250%;
+    font-family: 'Quicksand', sans-serif;
+    justify-content: right;
+}
+
+.text {
+    text-align: center;
+    padding-top: 150px;
+    padding-bottom: 150px;
+    background-image: url(Hintergrund.jpg);
+    background-repeat: no-repeat;
+}
+
+.text h1 {
+    font-family: 'Quicksand', sans-serif;
+    color: #f2f2f2;
+    font-size: 60px;
+    font-weight: bold;
+    text-shadow: 0 4px 3px rgba(0, 0, 0, 3);
+
+}
+
+.Beschreibung-top {
+    margin-top: 40px;
+    min-height: 8vh;
+}
+
+.Beschreibung-top h2 {
+    text-align: center;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: bold;
+    font-size: 40px;
+    padding-top: 10px;
+    color: #333333;
+}
+
+.Beschreibung {
+    padding-top: 20px;
+    margin-left: 200px;
+    margin-right: 200px;
+    text-align: center;
+}
+
+.Beschreibung h3 {
+    font-family: 'Quicksand', sans-serif;
+    text-align: center;
+    color: #333333;
+    font-size: 17px;
+}
+
+button {
+    width: 200px;
+    padding: 20px;
+    text-align: center;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    border-radius: 30px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    background-color: #241838;
+    z-index: 1;
+}
+
+.bttn{
+    background: #382e92;
+    height: 100%;
+    width: 0;
+    border-radius: 30px;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    z-index: -1;
+    transition: 0.5s;
+}
+
+button:hover span {
+    width: 100%;
+    
+}
+
+button:hover {
+    border: none;
+}
+
+.pic {
+    display: inline-block;
+    margin-bottom: -80px;
+    margin-top: -250px;
+    margin-left: 700px;
+}
+.bottom{
+    display: flex;
+    margin-top: 50px;
+    min-height: 10vh;
+    background-color: #333333;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Quicksand', sans-serif;
+    box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+.bottom ul{
+    display: flex;
+    justify-content: space-around;
+    justify-content: center ;
+    align-items: center;
+    font-family: 'Quicksand', sans-serif;
+    text-align: center;
+    margin-top: 20px;
+    margin-left: 40px;
+    margin-bottom:20px ;
+}
+.bottom li{
+    padding-bottom: 5px;
+    padding-top: 5px;
+    padding-left: 80px;
+    padding-right: 80px;
+    list-style: none;
+    justify-content: center;
+    align-items: center;
+    text-align: center; 
+}
+.bottom ul li a{
+    text-decoration: none;
+    color: white;
+    font-weight: lighter;
+    font-size: 40px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+/* Style für Namen  */
+
+.Input{
+    text-align: center;
+    padding-top: 20px;
+    margin-top: 40px;
+    min-height: 8vh;
+    border: none;
+    border-radius: 5px;
+    justify-content: center;
+    padding: 20px;
+}
+.Name{
+    border-radius: 30px;
+    justify-content: center;
+    padding: 20px;
+}
+.Text1
+{
+    margin-top: 20px;
+    text-align: center;
+}
+.Senden{
+    text-align: center;
+}
+
+
+/* Style für Idee  */
+.Idee h1 {
+    text-align: center;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: bold;
+    font-size: 40px;
+    padding-top: 10px;
+    color: #333333;
+}
+.Idee p{
+    padding-bottom: 40px;
+}
+.Idee h2{
+    text-align: center;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: bold;
+    font-size: 25px;
+    padding-top: 25px;
+    color: #333333;
+}
+
+
+/* Style für Vorschau  */
+.Vorschau{
+    margin: 20px;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    display: flex;
+}
+.rectangle{
+    border:solid thick #333333;  
+    border-width:3px; 
+    padding-left:9px;
+    padding-right: 9px; 
+    padding-top:6px; 
+    padding-bottom:6px; 
+    margin:2px; 
+    width:310px;
+    height: 200px;
+    
+    
+}
+.inp{
+    display: inline-block;
+    justify-content: center;
+    align-items: flex-end;
+    padding-top: 10px;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: bold;
+    color: #333333;
+    font-size: 44px;
+    width: 276.67;
+    height: 110.33;
+    
+
+}
+.logo2 {
+    text-decoration: none;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-align: right;
+    justify-content: right;    
+}
+.Text1 h4 {
+    font-family: 'Quicksand', sans-serif;
+    color: #333333;
+    font-size: 59px;
+    font-weight: bold;
+    text-shadow: #f2f2f2 rgba(0, 0, 0, 3);
+
+}
+.Notfall {
+    padding-top: 20px;
+    margin-left: 200px;
+    margin-right: 200px;
+    text-align: center;
+}
+/* Style für About us  */
+.About{
+    font-family: 'Quicksand', sans-serif;
+}
+.About h1{
+    padding-top: 20px;
+    justify-content: center;
+    text-align: center;
+    font-size: 50px;
+}
+p{
+    font-size: 17px;
+    color: #333333;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: bold;
+    text-align: center;
+    padding-top: 20px;
+    padding-left: 50px;
+    padding-right: 50px;
+    
+    
+    padding-bottom: 20px;
+}
+.All{
+    margin-top: 4%;
+    display: flex;
+    justify-content: space-between;
+    padding-top: -40px;
+    margin-left: 100px;
+    margin-right: 100px;
+    margin-bottom: 120px;
+}
+.About h2{
+    font-family: 'Quicksand', sans-serif;
+    text-align: center;
+    font-size: 25px;
+    text-shadow: 0 4px 3px rgba(0, 0, 0, 3);
+    padding-top: 20px;
+}
+.einzel-1:hover{
+    border-radius: 60px;
+    border: none;
+    background-image: url(Hintergrund.jpg);
+    transition: .7s;
+    color: #f2f2f2;
+}
+.einzel-2:hover{
+    border-radius: 60px;
+    border: none;
+    background-image: url(Hintergrund.jpg);
+    transition: .7s;
+    color: #f2f2f2;
+}
+.einzel-3:hover{
+    border-radius: 60px;
+    border: none;
+    background-image: url(Hintergrund.jpg);
+    transition: .7s;
+    color: #f2f2f2;
+}
+.einzel-4:hover{
+    border-radius: 60px;
+    border: none;
+    background-image: url(Hintergrund.jpg);
+    transition: .7s;
+    color: #f2f2f2;
+}
+.einzel-5:hover{
+    border-radius: 60px;
+    border: none;
+    background-image: url(Hintergrund.jpg);
+    transition: .7s;
+    color: #f2f2f2;
+}
+.einzel-6:hover{
+    border-radius: 60px;
+    border: none;
+    background-image: url(Hintergrund.jpg);
+    transition: .7s;
+    color: #f2f2f2;
+}
+.einzel-1:hover p{
+    color: #f2f2f2;
+    transition: .7s;
+}
+.einzel-2:hover p{
+    color: #f2f2f2;
+    transition: .7s;
+}
+.einzel-3:hover p{
+    color: #f2f2f2;
+    transition: .7s;
+}
+.einzel-4:hover p{
+    color: #f2f2f2;
+    transition: .7s;
+}
+.einzel-5:hover p{
+    color: #f2f2f2;
+    transition: .7s;
+}
+.einzel-6:hover p{
+    color: #f2f2f2;
+    transition: .7s;
+}
+
+
+/*Style für Kontakt*/
+
+.kontakt h5 {
+    text-align: center;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: bold;
+    font-size: 40px;
+    padding-top: 10px;
+    color: #333333;
+}
+/*Weil Cool*/
+.colored{
+    color: #382e92;
+}

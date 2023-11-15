@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oxygen&display=swap" rel="stylesheet">
+
+    <script src="JS/Alert.js"></script>
+<title>TruShine3030</title>
+</head>
+
+<body>
+    {% if alert %}
+    <script>
+        alert("Du bist nicht mit Bluetooth verbunden. Verbinde dich erst mit Bluetooth oder frage einen Mitarbeiter bevor du startes.")    
+    </script>
+    {% endif %}
+    
+    <div class="Menu">
+        <div class="nav">
+            
+            <ul class="links">
+                <li><a href="https://www.trumpf.com/de_DE/karriere/">TRUMPF</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/Idee">Idee</a></li>
+                <li><a href="{{ url_for('About') }}">About us</a></li>
+                <li><a href="/Kontakt">Kontakt</a></li>
+            </ul>
+            <div class="logo">
+            <a href="https://www.trumpf.com/de_DE/"><img src="{{url_for('static', filename='Trumpf.png')}}" alt="Logo" height="30" width="30"></a>
+            </div>
+
+        </div>
+    </div>
+    <div class="Balken">
+    
+    </div>
+    <div class="text">
+        <h1>TruShine3030</h1>
+       
+    </div>
+    <div class="pic">
+    
+    </div>
+    <div class="Beschreibung-top">
+        <h2>Die leuchtenden Namensschilder</h2>
+    </div>
+    <div class="Beschreibung">
+        <h3>Platzhalter</h3>
+        <div id="buttonspan">
+        <a href="/Name"> <button type="Button"  {% if alert %} disabled {% endif %} id="Button"><span class="bttn"></span>Weiter</button></a>
+        </div>
+    </div>
+    <div class="bottom">
+        <ul>
+            <li><figure>
+                <a href="Reset"><img src="{{url_for('static', filename='Reset.png')}}" height="60" width="60" alt="logo"></a>
+                <figcaption><a href="Reset">Reset</a></figcaption>
+                </figure>
+            </li>
+            <li><figure>
+                <a href="Notstop"><img src="{{url_for('static', filename='Notstop.png')}}" height="60" width="60" alt="logo"></a>
+                <figcaption><a href="Notstop">Notstop</a></figcaption>
+              </figure>
+            </li>
+            <li><form id="form-name" method="POST" action="{{ url_for('ausgabe') }}">
+                <div class="ausgabe">
+                   <button class="ausgabe"type="submit"><img src="{{url_for('static', filename='Ausgabe.png')}}" alt="Ausgabe" height="60" width="60"></button>
+                   <p10>Ausgabe</p10>
+                </div> 
+           </form>
+            </li>
+        </ul>
+    </div>
+
+</body>
+</html>

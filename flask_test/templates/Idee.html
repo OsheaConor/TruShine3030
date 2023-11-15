@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="de" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oxygen&display=swap" rel="stylesheet">
+<title>TruShine3030</title>
+</head>
+
+<body>
+    <div class="Menu">
+        <div class="nav">
+            
+            <ul class="links">
+                <li><a href="https://www.trumpf.com/de_DE/karriere/">TRUMPF</a></li>
+                <li><a href="/Home">Home</a></li>
+                <li><a href="/Idee">Idee</a></li>
+                <li><a href="/About">About us</a></li>
+                <li><a href="/Kontakt">Kontakt</a></li>
+            </ul>
+            <div class="logo">
+            <a href="https://www.trumpf.com/de_DE/"><img src="{{url_for('static', filename='Trumpf.png')}}" alt="Logo" height="30" width="30"></a>
+            </div>
+
+        </div>
+    </div>
+    <div class="Idee">
+        <h1>Wie kam es zu dem Cube?</h1>
+        <p>
+            Die Idee hinter unserem Cube ist simpel. Wir als Team wollten einen echten Eyecatcher für die Messen des Ausbildungsteams kreieren. Die Vorgaben waren, dass der Cube eine Größe von 30x30x30 einhalten soll und das Budget von 300 Euro nicht überschreitet. Außerdem sollte er mit einem 24 Volt Netzteil betrieben werden können und keinerlei pneumatische Elemente enthalten. Wir hatten viele unterschiedliche Idee wie ein Polaroid-Cube oder ein Mineatur-Hochregallager. Schlussendlich hat sich ein Vorschlag durchsetzen können. Wir setzten uns zum Ziel, einen Cube zu entwickeln, der selbständig einen beliebigen Namen inklusive Trumpflogo in ein Plexiglas fräsen kann. Anschließend kann das Plexiglas als ein Leuchtbild verwendet werden, indem man es in eine Vorrichtung stellt, die mit einem LED-Streifen unterlegt ist, sodass Licht, welches durch die Plexiglasplatte scheint und an den Gravuren gebrochen wird.
+        </p>
+        <h2>Vielen Dank für Ihr Interesse an unserem Projekt, wir hoffen Sie von einer Ausbildung bei Trumpf überzeugt zu haben und wüschen ihnen viel Spaß mit dem kleinen Andenken an uns.</h2>
+    </div>
+    <div class="bottom">
+        <ul>
+            <li><figure>
+                <a href="Reset"><img src="{{url_for('static', filename='Reset.png')}}" height="60" width="60" alt="logo"></a>
+                <figcaption><a href="Reset">Reset</a></figcaption>
+                </figure>
+            </li>
+            <li><figure>
+                <a href="Notstop"><img src="{{url_for('static', filename='Notstop.png')}}" height="60" width="60" alt="logo"></a>
+                <figcaption><a href="Notstop">Notstop</a></figcaption>
+              </figure>
+            </li>
+            <li><figure>
+                <a href="Ausgabe"><img src="{{url_for('static', filename='Ausgabe.png')}}" height="60" width="60" alt="logo"></a>
+                <figcaption><a href="Ausgabe">Ausgabe</a></figcaption>
+              </figure>
+            </li>
+        </ul>
+    </div>
+</body>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+    
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oxygen&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        
+        socket.on('colored', function(i) {
+            var text = document.getElementById('message').innerText;
+            document.getElementById('message').innerHTML =
+                `<span class="colored">${text.slice(0, i+1)}</span>${text.slice(i+1)}`;
+        });
+        socket.emit('ping');
+    </script>
+    <script src="JS/test.js"></script>
+<title>TruShine3030</title>
+</head>
+<body>
+    <div class="Menu">
+        <div class="nav">
+            
+            <ul class="links">
+                <li><a href="https://www.trumpf.com/de_DE/karriere/">TRUMPF</a></li>
+                <li><a href="/Home">Home</a></li>
+                <li><a href="/Idee">Idee</a></li>
+                <li><a href="/About">About us</a></li>
+                <li><a href="/Kontakt">Kontakt</a></li>
+            </ul>
+            <div class="logo">
+            <a href="https://www.trumpf.com/de_DE/"><img src="{{url_for('static', filename='TRUMPF.png')}}" alt="Logo" height="30" width="30"></a>
+            </div>
+        </div>
+    </div>
+    <div class="Text1">
+        <h4>
+            Hier siehtst du wie dein Namensschild aussehen könnte.
+        </h4>
+    </div>
+    
+    <script type="text/javascript">
+        function Werteliste (querystring) {
+          if (querystring == '') return;
+          var wertestring = querystring.slice(1);
+          var paare = wertestring.split("&");
+          var paar, name, wert;
+          for (var i = 0; i < paare.length; i++) {
+            paar = paare[i].split("=");
+            name = paar[0];
+            wert = paar[1];
+            name = unescape(name).replace("+", " ");
+            wert = unescape(wert).replace("+", " ");
+            this[name] = wert;
+          }
+        }
+        var liste = new Werteliste(location.search);
+        </script>
+        <div class="Vorschau">
+        <div class="rectangle">
+            <div class="logo2">
+                <img src="{{url_for('static', filename='Logo.png')}}" alt="Logo" height="75" width="75">
+            </div>
+        <div class="inp" id="name">
+            <p1 id="message"><nobr>{{ name }}</nobr></p1> <!-- {{ name }} -->
+            </div>
+        </div>
+        </div>
+        
+        <div class="bottom">
+            <ul>
+                <li><figure>
+                    <a href="Reset"><img src="{{url_for('static', filename='Reset.png')}}" height="60" width="60" alt="logo"></a>
+                    <figcaption><a href="Reset">Reset</a></figcaption>
+                    </figure>
+                </li>
+                <li><figure>
+                    <a href="Notstop"><img src="{{url_for('static', filename='Notstop.png')}}" height="60" width="60" alt="logo"></a>
+                    <figcaption><a href="Notstop">Notstop</a></figcaption>
+                  </figure>
+                </li>
+                <li><figure>
+                    <a href="Ausgabe"><img src="{{url_for('static', filename='Ausgabe.png')}}" height="60" width="60" alt="logo"></a>
+                    <figcaption><a href="Ausgabe">Ausgabe</a></figcaption>
+                  </figure>
+                </li>
+            </ul>
+        </div>
+            
+</body>
