@@ -1,4 +1,5 @@
 #include <AccelStepper.h>
+#include <ReactESP.h>
 #include "BluetoothSerial.h"
  
 static const String DEVICE_NAME = "ESP32-BT-Slave";
@@ -21,11 +22,10 @@ static const char BT_NAME_FINISHED = '/';
   #error Serial Port Profile for Bluetooth is not available or not enabled. It is only available for the ESP32 chip.
 #endif
  
-#define STEPS_PER_MM 100
-
 // Eine rev des Stepper motors braucht 800 steps
+ 
 #define X_STEP_COUNT 5500
-#define Y_STEP_COUNT 5000
+#define Y_STEP_COUNT 4000
  
 #define X_STEP_CHAR_COUNT 700
 #define Y_STEP_CHAR_COUNT 1400
@@ -71,13 +71,9 @@ static const char BT_NAME_FINISHED = '/';
 #define COORD_AMOUNT 144
  
 #define MAX_LETTERS 12
-
-#define LOGO_SIZE_MM 12 // Size of the logo in mm
-#define LOGO_RIGHT 0.65f
-#define LOGO_TOP 0.8f
-// Coords on board for the top-right corner of the logo
  
 BluetoothSerial SerialBT;
+ReactESP reactApp;
 AccelStepper X_STEPPER_MOTOR(AccelStepper::DRIVER, X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN);
 AccelStepper Y_STEPPER_MOTOR(AccelStepper::DRIVER, Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN);
 AccelStepper Z_STEPPER_MOTOR(AccelStepper::DRIVER, Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN);
@@ -143,7 +139,7 @@ void setup()
  
   // startCommandInputListener();
   // calibrateDrillDistance();
-
+ 
   // REMOVE ME!
   moveDrillHeight(DRILL_STEP_START_UP);
 }
@@ -151,31 +147,53 @@ void setup()
 void loop()
 {
   // Setup
-  Serial.println("Provide input");
-  String s = getUserNameFromConsole();
+ 
+  String s = getUserName();
   s.trim();
   Serial.println(s);
+ 
+  for (int i = 0; i < s.length(); i++) {
+    delay(4000);
+ 
+    String finishedCharBTData;
+    finishedCharBTData.concat(BT_CHAR_FINISHED);
+    finishedCharBTData.concat(" ");
+    finishedCharBTData.concat(i);
+    finishedCharBTData.concat("\n");
+    Serial.println(finishedCharBTData);
+    writeBT(finishedCharBTData);
+    Serial.println("Write");
+  }
+ 
+  delay(500);
+  String finishedNameBTData;
+  finishedNameBTData.concat(BT_NAME_FINISHED);
+  finishedNameBTData.concat("\n");
+  writeBT(finishedNameBTData);
+   
+  /*
   char* chars = new char[s.length() + 1];
   strcpy(chars, s.c_str());
  
+  Serial.println("H");
   moveToPlexiStart();
+  Serial.println("Homes");
  
   //Main
   drillUserName(chars, s.length());
-  delay(1000);
-  drillLogo();
  
   // Finish
   delay(2000);
   moveToAusgabe();
   delay(2000);  
+  */
 }
  
  
 // ========
 /* Utils */
 // ========
-
+ 
 void writeBT(String str) {
   uint8_t buf[str.length()];
   memcpy(buf, str.c_str(), str.length());
@@ -230,7 +248,7 @@ bool isLettersOnly(String txt) {
  
 float breiteBox(int il) {
   float breite = ((float)(55.0 - (il + 1))/ (float) il );
-  breite = min(breite, ((float) X_STEP_CHAR_COUNT / STEPS_PER_MM));
+  breite = min(breite, (float)7.0);
   return breite;
 }
  
@@ -299,8 +317,8 @@ void stopAll() {
  
 void drillUserName(char* name, int nameLen) {
   float* charStartingPoints = firstboxGerade(nameLen);
-  float scale = breiteBox(nameLen) / ((float) X_STEP_CHAR_COUNT / STEPS_PER_MM);
-  moveToOnBoard(0.5, 0.5);
+  float scale = breiteBox(nameLen) / 7.0f;
+  moveToOnBoard(0.5,0.5);
   startDrill();
  
   for (int i = 0; i < nameLen; i++) {
@@ -309,7 +327,7 @@ void drillUserName(char* name, int nameLen) {
  
     moveToOnBoard(charStart, 0.3f);
     delay(200);
-    drillChar(c, scale, X_STEP_CHAR_COUNT, Y_STEP_CHAR_COUNT);
+    drillChar(c, scale);
     String finishedCharBTData;
     finishedCharBTData.concat(BT_CHAR_FINISHED);
     finishedCharBTData.concat(" ");
@@ -321,14 +339,14 @@ void drillUserName(char* name, int nameLen) {
  
   stopDrill();
   delay(500);
-
+ 
   String nameFinishedBT;
   nameFinishedBT.concat(BT_NAME_FINISHED);
   nameFinishedBT.concat("\n");
   writeBT(nameFinishedBT);
 }
  
-void drillChar(char c, float scale, uint charFieldStepWidth, uint charFieldStepHeight) {
+void drillChar(char c, float scale) {
   Serial.print("Drilling char: ");
   Serial.println(c);
  
@@ -340,135 +358,38 @@ void drillChar(char c, float scale, uint charFieldStepWidth, uint charFieldStepH
   float** charCoords = charTooCoords(c);
   uint coordLen = getCoordLength(c);
  
-  uint stepsCharX = 0;
-  uint stepsCharY = 0;
+  float posCharX = 0.0f;
+  float posCharY = 0.0f;
  
   for (int i = 0; i < coordLen; i++) {
-    if(i == 1) {
-      moveDrillHeight(DRILL_STEP_DOWN);
-      delay(500);
-    }
-
+   
+   
     float xCoord = charCoords[i][0];
     float yCoord = charCoords[i][1];
-
-    Serial.print(" --> ");
-    Serial.print(i);
-    Serial.println(" <-- ");
-    Serial.print(xCoord);
-    Serial.print(" - ");
-    Serial.println(yCoord);
-    Serial.print(xCoord - (stepsCharX / X_STEP_COUNT));
-    Serial.print(" - ");
-    Serial.println((yCoord - (stepsCharY / Y_STEP_COUNT)));
-    Serial.print(charFieldStepWidth);
-    Serial.print(" - ");
-    Serial.println(charFieldStepHeight);
-
-    int xStepsToCoord = charFieldStepWidth * (xCoord - (stepsCharX / X_STEP_COUNT));
-    int yStepsToCoord = charFieldStepHeight * (yCoord - (stepsCharY / Y_STEP_COUNT));
-
-    int xSteps = xStepsToCoord - stepsCharX;
-    int ySteps = yStepsToCoord - stepsCharY;
-
-    Serial.print(xSteps);
-    Serial.print(" - ");
-    Serial.println(ySteps);
-
-    positionX += ((float) xSteps / (float) X_STEP_COUNT);
-    positionY += ((float) ySteps / (float) Y_STEP_COUNT);
-
-    Serial.print(positionX);
-    Serial.print(" - ");
-    Serial.println(positionY);
-
-
-
-    moveSteps(xSteps, ySteps, DRILL_STEP_SPEED);
-
-    stepsCharX += xSteps;
-    stepsCharY += ySteps;
+ 
+    moveRelativeInCharField((xCoord - posCharX) * scale, (yCoord - posCharY) * scale);
+ 
+    posCharX = xCoord;
+    posCharY = yCoord;
+ 
+    if(i==0){
+    moveDrillHeight(DRILL_STEP_DOWN);
+    delay(500);
+    }
   }
  
   delay(200);
   moveDrillHeight(-DRILL_STEP_DOWN);
   delay(500);
   // Reset to bottom right corner
-  moveSteps(-stepsCharX + charFieldStepWidth, -stepsCharY, MOVE_STEP_SPEED);
-  positionX -= ((float) (stepsCharX + charFieldStepWidth) / (float) X_STEP_COUNT);
-  positionY -= ((float) stepsCharY / (float) Y_STEP_COUNT);
-
-  Serial.print(positionX);
-  Serial.print(" - ");
-  Serial.println(positionY);
+  moveRelativeInCharField((1.0 - posCharX), -posCharY);
 }
  
-
-// ===================
-/* Logo Drill Logic */
-// ===================
-
-void drillLogo() {
-  float relativeSize = (6.0 / 8.0); // Constant
-
-  uint squareWidthSteps = LOGO_SIZE_MM * STEPS_PER_MM;
-  uint squareHeightSteps = (uint) (LOGO_SIZE_MM * relativeSize * STEPS_PER_MM);
-  uint textHeightSteps = (uint) ((LOGO_SIZE_MM * STEPS_PER_MM) - squareHeightSteps);
-
-  moveToOnBoard(LOGO_RIGHT, LOGO_TOP);
-  drillSquare(squareHeightSteps, squareWidthSteps, textHeightSteps);
-
-  moveSteps(-squareWidthSteps, -textHeightSteps, MOVE_STEP_SPEED);
-  drillLogoTitle(squareWidthSteps, textHeightSteps);
-}
-
-void drillSquare(uint squareHeightSteps, uint squareWidthSteps, uint textHeightSteps) {
-  moveSteps(0, -textHeightSteps, MOVE_STEP_SPEED);
-
-  // Drill square
-  startDrill();
-  delay(500);
-  moveDrillHeight(DRILL_STEP_DOWN);
-  delay(500);
-
-  moveSteps(0, -squareHeightSteps, DRILL_STEP_SPEED);
-  delay(100);
-  moveSteps(-squareWidthSteps, 0, DRILL_STEP_SPEED);
-  delay(100);
-  moveSteps(0, squareHeightSteps, DRILL_STEP_SPEED);
-  delay(100);
-  moveSteps(squareWidthSteps, 0, DRILL_STEP_SPEED);
-
-  delay(200);
-  moveDrillHeight(-DRILL_STEP_DOWN);
-  delay(500);
-}
-
-void drillLogoTitle(uint squareWidthSteps, uint textHeightSteps) {
-  const String title = "TRUMPF";
-  uint8_t buf[title.length()];
-  memcpy(buf, title.c_str(), title.length());
-
-  uint charWidthSteps = (uint) ((float) squareWidthSteps / (float) title.length() * STEPS_PER_MM);
-  uint spaceWidthSteps = STEPS_PER_MM * 0.2f;
-  charWidthSteps -= (title.length() * spaceWidthSteps);
-  float charScale = (((float) charWidthSteps / (float) X_STEP_CHAR_COUNT) / (float) X_STEP_CHAR_COUNT);
-
-  for (int i = 0; i < title.length(); i++) {
-    char c = buf[i];
-    float** charCoords = charTooCoords(c);
-    uint coordLen = getCoordLength(c);
-
-    drillChar(c, charScale, charWidthSteps, textHeightSteps);
-    delay(200);
-    moveSteps(spaceWidthSteps, 0, MOVE_STEP_SPEED);
-  }
-}
-
-
-// ==============
-/* Input Logic */
-// ==============
+ 
+// ======================
+/* CONSOLE Input Logic */
+/* Muss zu USB oder anderem umgeändert werden! */
+// ==============================================
  
 String getUserName() {
   while (true) {
@@ -562,6 +483,16 @@ void moveToOnBoard(float x, float y) {
   moveRelativeOnBoard((x - positionX), (y - positionY));
 }
  
+void moveRelativeInCharField(float x, float y) {
+  int xSteps = X_STEP_CHAR_COUNT * x;
+  int ySteps = Y_STEP_CHAR_COUNT * y;
+ 
+  positionX += ((float) xSteps / (float) X_STEP_COUNT);
+  positionY += ((float) ySteps / (float) Y_STEP_COUNT);
+ 
+  moveSteps(xSteps, ySteps, DRILL_STEP_SPEED);
+}
+ 
 // Moves the drill too 0 0 on the glass board
 void moveToPlexiStart() {
   gotoHome();
@@ -577,13 +508,13 @@ void moveToPlexiStart() {
  
 void moveToPlexiX() {
                     // (V-------V) Magic values
-  float stepszuplexiX = 3.65 * STEPS_PER_MM;
+  float stepszuplexiX = 2.65 * 100;
   moveSteps(stepszuplexiX, 0, MOVE_STEP_SPEED);
 }
  
 void moveToPlexiY() {
                     // (V------V) Magic values
-  float stepszuplexiY = 43.7 * STEPS_PER_MM; // Weg * Schritte pro mm
+  float stepszuplexiY = 53.7 * 100; // Weg * Schritte pro mm
   moveSteps(0, stepszuplexiY, MOVE_STEP_SPEED);
 }
  
@@ -596,8 +527,8 @@ void moveToAusgabe() {
   delay(1000);
  
               // (V-------V) Magic values
-  float ausgabe_y = 140 * STEPS_PER_MM;
-  float ausgabe_x = 33 * STEPS_PER_MM;
+  float ausgabe_y = 140 * 100;
+  float ausgabe_x = 33 * 100;
   moveSteps(ausgabe_x, 0, MOVE_STEP_SPEED);
   moveSteps(0, ausgabe_y, MOVE_STEP_SPEED);
 }
@@ -609,35 +540,52 @@ void moveToAusgabe() {
  
 void stopDrill() {
   stopMove();
-  int n = 255;
+  Serial.println("Stopped movement");
+ //int test;
+ // test = DRILL_STEP_DOWN * (-1);
+  //moveDrillHeight(test);
+ // int n = analogRead(DRILL_ENABLE_PIN);  // Make sure that if the drill already moves,
+Serial.println("Stopping");
+int n = 255;
   if (n <= 0) {
     digitalWrite(DRILL_ENABLE_PIN, LOW);
     return;
   }
  
+  Serial.println(n);
+  //digitalWrite(DRILL_ENABLE_PIN, HIGH);
   while(n > 1){
     analogWrite(DRILL_MOTOR_POWER_PIN, n);
     delay(DRILL_STARTUP_TIME_MS / 255);
     n--;
   }
  
-
   digitalWrite(DRILL_ENABLE_PIN, LOW);
   analogWrite(DRILL_MOTOR_POWER_PIN, 0);
  
-  raiseDrill(); 
+  Serial.println("raising");
+ 
 }
  
 void startDrill() {
+  Serial.println("Starting drill");
   digitalWrite(DRILL_ENABLE_PIN, HIGH);
-  int n = 0;
+  //int n = analogRead(DRILL_MOTOR_POWER_PIN);  // Make sure that if the drill already moves,
+ int n = 0;
+  //Serial.println((int) (DRILL_STARTUP_TIME_MS / 255));
   while(n < 255){
     analogWrite(4, n);
+   // delay((int) (DRILL_STARTUP_TIME_MS / 255));
    delay(40);
    Serial.println(n);
     n++;
   }
-
+ 
+  // REMOVE ME
+  //moveDrillHeight(DRILL_STEP_DOWN);
+ 
+ 
+  // moveDrillHeight(-STEPS_TO_PLATE);
   drillLowered = true;
 }
  
@@ -645,7 +593,7 @@ void raiseDrill() {
   // There is no check here...
   // I just believe... that it won't break :)
   Serial.println("Moving drill height");
-  moveDrillHeight(-DRILL_STEP_DOWN);
+  moveDrillHeight(DRILL_STEP_DOWN);
   drillLowered = false;
 }
  
@@ -669,9 +617,11 @@ void calibrateDrillDistance() {
 }
  
 void moveDrillHeight(int steps) {
+  // Z_STEPPER_MOTOR.move(abs(steps));
+  // Z_STEPPER_MOTOR.setPinsInverted((steps < 0), false, false);
  
   Serial.print("Moving ");
-  Serial.print(steps);
+  Serial.print(abs(steps));
   Serial.println(" Steps");
  
   if (steps < 0) {
@@ -687,9 +637,21 @@ void moveDrillHeight(int steps) {
     delayMicroseconds(600);
     digitalWrite(Z_MOTOR_STEP_PIN, LOW);
     delayMicroseconds(600);
+ 
+ 
   }
  
   digitalWrite(Z_MOTOR_DIR_PIN, LOW);
+ 
+  // while (Z_STEPPER_MOTOR.distanceToGo() > 0) {
+    /*
+    Z_STEPPER_MOTOR.run();
+    delay(20);
+    Serial.println(Z_STEPPER_MOTOR.distanceToGo());
+    */
+  // }
+ 
+  // Z_STEPPER_MOTOR.setPinsInverted(false, false, false);
 }
  
  
