@@ -436,22 +436,19 @@ void drillLogoTitle(uint squareWidthSteps, uint textHeightSteps) {
   uint spaceWidthSteps = STEPS_PER_MM * 0.2f;
   charWidthSteps -= spaceWidthSteps;
 
-  // Todo
-  logoDrillChar('T', charWidthSteps, textHeightSteps);
+  for(int i = 0; i < title.length(); i++) {
+    logoDrillChar(buf[i], charWidthSteps, textHeightSteps);
+    moveSteps(spaceWidthSteps, 0, MOVE_STEP_SPEED);
+  }
 }
 
 void logoDrillChar(char c, uint charWidthSteps, uint charHeightSteps) {
-  Serial.println("LOGO");
   Serial.println(c);
   float** charCoords = charTooCoords(c);
   uint coordLen = getCoordLength(c);
 
   int stepsCharX = 0;
   int stepsCharY = 0;
-
-  Serial.print(charWidthSteps);
-  Serial.print(" - ");
-  Serial.println(charHeightSteps);
 
   for (int i = 0; i < coordLen; i++) {
     float xCoord = charCoords[i][0];
@@ -472,6 +469,10 @@ void logoDrillChar(char c, uint charWidthSteps, uint charHeightSteps) {
       delay(500);
     }
   }
+
+  moveDrillHeight(-DRILL_STEP_DOWN);
+  delay(200);
+  moveSteps(-stepsCharX, -stepsCharY, MOVE_STEP_SPEED);
 }
 
 
@@ -737,14 +738,6 @@ void startDrill() {
   }
 
   drillLowered = true;
-}
-
-void raiseDrill() {
-  // There is no check here...
-  // I just believe... that it won't break :)
-  Serial.println("Moving drill height");
-  moveDrillHeight(DRILL_STEP_DOWN);
-  drillLowered = false;
 }
 
 // This method should only ever have too be run once
