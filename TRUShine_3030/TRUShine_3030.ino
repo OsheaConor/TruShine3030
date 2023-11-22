@@ -74,7 +74,7 @@ static const char BT_NAME_FINISHED = '/';
 
 #define LOGO_SIZE_MM 20  // Size of the logo in mm
 #define LOGO_RIGHT 0.65f
-#define LOGO_TOP 0.8f
+#define LOGO_TOP 0.9f
 // Coords on board for the top-right corner of the logo
 
 BluetoothSerial SerialBT;
@@ -256,7 +256,7 @@ void setup() {
 
 void loop() {
   // Setup
-  String s = getUserNameFromConsole();
+  String s = getUserName();
   s.trim();
   Serial.println(s);
   char* chars = new char[s.length() + 1];
@@ -401,7 +401,7 @@ void drillLogo() {
   moveToOnBoard(LOGO_RIGHT, LOGO_TOP);
   drillSquare(squareHeightSteps, squareWidthSteps, textHeightSteps);
 
-  moveSteps(-squareWidthSteps, -textHeightSteps, MOVE_STEP_SPEED);
+  moveSteps(-squareWidthSteps, 120, MOVE_STEP_SPEED);
   drillLogoTitle(squareWidthSteps, textHeightSteps);
 }
 
@@ -438,7 +438,7 @@ void drillLogoTitle(uint squareWidthSteps, uint textHeightSteps) {
 
   for(int i = 0; i < title.length(); i++) {
     logoDrillChar(buf[i], charWidthSteps, textHeightSteps);
-    moveSteps(spaceWidthSteps, 0, MOVE_STEP_SPEED);
+    moveSteps(spaceWidthSteps + charWidthSteps, 0, MOVE_STEP_SPEED);
   }
 }
 
@@ -760,9 +760,6 @@ void calibrateDrillDistance() {
 }
 
 void moveDrillHeight(int steps) {
-  // Z_STEPPER_MOTOR.move(abs(steps));
-  // Z_STEPPER_MOTOR.setPinsInverted((steps < 0), false, false);
-
   Serial.print("Moving ");
   Serial.print(abs(steps));
   Serial.println(" Steps");
