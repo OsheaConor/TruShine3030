@@ -24,7 +24,7 @@ static const char BT_NAME_FINISHED = '/';
 #define STEPS_PER_MM 100
 
 // Eine rev des Stepper motors braucht 800 steps
-#define X_STEP_COUNT 5500
+#define X_STEP_COUNT 5600
 #define Y_STEP_COUNT 4000
 
 #define X_STEP_CHAR_COUNT 700
@@ -46,7 +46,7 @@ static const char BT_NAME_FINISHED = '/';
 #define DRILL_CALIBRATE_STEP_TIME_us 500
 
 #define DRILL_STEP_START_UP -200
-#define DRILL_STEP_DOWN 240
+#define DRILL_STEP_DOWN 220
 // Amount of steps too move up, when calibrating the drills distance too the plate
 #define DRILL_SENSOR_X_STEPS 100
 #define DRILL_SENSOR_Y_STEPS 100
@@ -72,8 +72,8 @@ static const char BT_NAME_FINISHED = '/';
 
 #define MAX_LETTERS 12
 
-#define LOGO_SIZE_MM 20  // Size of the logo in mm
-#define LOGO_RIGHT 0.65f
+#define LOGO_SIZE_MM 15  // Size of the logo in mm
+#define LOGO_RIGHT 0.35f
 #define LOGO_TOP 0.9f
 // Coords on board for the top-right corner of the logo
 
@@ -154,13 +154,10 @@ void loop() {
   Serial.println(s);
   char* chars = new char[s.length() + 1];
   strcpy(chars, s.c_str());
- 
-  Serial.println("H");
   moveToPlexiStart();
-  Serial.println("Homes");
  
   //Main
-  // drillUserName(chars, s.length());
+  drillUserName(chars, s.length());
   drillLogo();
  
   // Finish
@@ -221,7 +218,7 @@ float* firstboxGerade(int il) {
   float breite = breiteBox(il);
 
   float b1 = ((float)breite * ((float)il / 2) + (((float)(il + 1) / 2) - 1));  //Breite die es zu ersten Box gehe muss
-  float c1 = (((float)30 - b1) * einheit);                                     //Cord der ersten 0.0 Box
+  float c1 = (((float)28 - b1) * einheit);                                     //Cord der ersten 0.0 Box
   //Neue Box
   float NeueBox = ((float)breite + 1) * einheit;  // Cord neue Box (Breite Box+ Abstand) vorrausetzung immer 0.0
   float* Werte = new float[il];                   //verusch des arrays
@@ -285,13 +282,7 @@ void drillLogo() {
   uint squareHeightSteps = (uint)(LOGO_SIZE_MM * relativeSize * STEPS_PER_MM);
   uint textHeightSteps = (uint)((LOGO_SIZE_MM * STEPS_PER_MM) - squareHeightSteps);
 
-  Serial.print(squareWidthSteps);
-  Serial.print(" - ");
-  Serial.print(squareHeightSteps);
-  Serial.print(" - ");
-  Serial.println(textHeightSteps);
-
-  moveToOnBoard(LOGO_RIGHT, LOGO_TOP);
+  moveToOnBoard(1 - LOGO_RIGHT, LOGO_TOP);
   drillSquare(squareHeightSteps, squareWidthSteps, textHeightSteps);
 
   moveSteps(-squareWidthSteps, 120, MOVE_STEP_SPEED);
@@ -405,7 +396,6 @@ void drillUserName(char* name, int nameLen) {
 }
 
 void drillChar(char c, float scale) {
-  Serial.print("Drilling char: ");
   Serial.println(c);
 
   // Get the (0 0) coords of the char field.
@@ -553,7 +543,6 @@ void moveRelativeInCharField(float x, float y) {
 // Moves the drill too 0 0 on the glass board
 void moveToPlexiStart() {
   gotoHome();
-  Serial.println("Homeafsafaw");
   delay(200);
 
   moveToPlexiX();
@@ -597,14 +586,12 @@ void moveToAusgabe() {
 
 void stopDrill() {
   stopMove();
-  Serial.println("Stopped movement");
   int n = 255;
   if (n <= 0) {
     digitalWrite(DRILL_ENABLE_PIN, LOW);
     return;
   }
  
-  Serial.println(n);
   while(n > 1){
     analogWrite(DRILL_MOTOR_POWER_PIN, n);
     delay(DRILL_STARTUP_TIME_MS / 255);
@@ -613,20 +600,14 @@ void stopDrill() {
  
   digitalWrite(DRILL_ENABLE_PIN, LOW);
   analogWrite(DRILL_MOTOR_POWER_PIN, 0);
- 
-  Serial.println("raising");
 }
 
 void startDrill() {
-  Serial.println("Starting drill");
   digitalWrite(DRILL_ENABLE_PIN, HIGH);
   int n = 0;
-  /*analogRead(DRILL_MOTOR_POWER_PIN);*/
   while (n < 255) {
     analogWrite(DRILL_MOTOR_POWER_PIN, n);
     delay(40);
-    Serial.print(">> ");
-    Serial.println(n);
     n++;
   }
 
@@ -653,17 +634,13 @@ void calibrateDrillDistance() {
 }
 
 void moveDrillHeight(int steps) {
-  Serial.print("Moving ");
-  Serial.print(abs(steps));
-  Serial.println(" Steps");
 
   if (steps < 0) {
     digitalWrite(Z_MOTOR_DIR_PIN, LOW);
-    Serial.println("UP");
   } else {
     digitalWrite(Z_MOTOR_DIR_PIN, HIGH);
-    Serial.println("DOWN");
   }
+
   for (int i = 0; i < abs(steps); i++) {
     digitalWrite(Z_MOTOR_STEP_PIN, HIGH);
     delayMicroseconds(600);
@@ -682,7 +659,6 @@ void moveDrillHeight(int steps) {
 
 void gotoHome() {
   stopDrill();
-  Serial.println("Stopped drill");
   delay(1000);  // Just in case
 
   calibrateYAxis();
