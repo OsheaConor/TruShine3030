@@ -374,7 +374,7 @@ void drillUserName(char* name, int nameLen) {
     char c = name[i];
     float charStart = charStartingPoints[i];
 
-    moveToOnBoard(charStart, 0.3f);
+    moveToOnBoard(charStart, 0.01f);
     delay(200);
     drillChar(c, scale);
     String finishedCharBTData;
