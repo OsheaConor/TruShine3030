@@ -1,6 +1,6 @@
 #include <AccelStepper.h>
 #include "BluetoothSerial.h"
-
+int prev = 1;
 static const String DEVICE_NAME = "ESP32-BT-Slave";
 
 static const char BT_USER_NAME_END_TOKEN = '~';
@@ -42,14 +42,14 @@ static const char BT_NAME_FINISHED = '/';
 // Speed in steps/s
 
 #define DRILL_STARTUP_TIME_MS 10000
-#define DRILL_STARTUP_RAISE_STEPS 800
+#define DRILL_STARTUP_RAISE_STEPS -800
 #define DRILL_CALIBRATE_STEP_TIME_us 500
 
-#define DRILL_STEP_START_UP -200
-#define DRILL_STEP_DOWN 220
+#define DRILL_STEP_START_UP -225
+#define DRILL_STEP_DOWN 280.5
 // Amount of steps too move up, when calibrating the drills distance too the plate
-#define DRILL_SENSOR_X_STEPS 100
-#define DRILL_SENSOR_Y_STEPS 100
+#define DRILL_SENSOR_X_STEPS 10800
+#define DRILL_SENSOR_Y_STEPS 10400
 #define STEPS_TO_PLATE 200
 // Fiktive Werte!
 
@@ -66,9 +66,9 @@ static const char BT_NAME_FINISHED = '/';
 #define X_SENSOR 34
 #define Y_SENSOR 35
 #define Z_SENSOR 32
-
-#define CHAR_AMOUNT 26
-#define COORD_AMOUNT 144
+#define Door 33
+#define CHAR_AMOUNT 34
+#define COORD_AMOUNT 216
 
 #define MAX_LETTERS 12
 
@@ -81,9 +81,9 @@ BluetoothSerial SerialBT;
 AccelStepper X_STEPPER_MOTOR(AccelStepper::DRIVER, X_MOTOR_STEP_PIN, X_MOTOR_DIR_PIN);
 AccelStepper Y_STEPPER_MOTOR(AccelStepper::DRIVER, Y_MOTOR_STEP_PIN, Y_MOTOR_DIR_PIN);
 AccelStepper Z_STEPPER_MOTOR(AccelStepper::DRIVER, Z_MOTOR_STEP_PIN, Z_MOTOR_DIR_PIN);
-
-                                       // A  B  C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R    S    T    U    V    W    X    Y    Z
-static uint CHAR_INDEXES[CHAR_AMOUNT] = { 0, 5, 15, 19, 26, 33, 39, 45, 51, 53, 58, 64, 67, 72, 76, 81, 86, 95, 101, 107, 111, 115, 118, 123, 128, 133 };
+static char CHAR_IND_ARR[CHAR_AMOUNT] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R','S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ','-','.','1', '2', '#', '@', '&'};
+                                       // A  B  C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R    S    T    U    V    W    X    Y    Z  Space  -    .
+static uint CHAR_INDEXES[CHAR_AMOUNT] = { 0, 5, 15, 19, 26, 33, 39, 45, 51, 53, 58, 64, 67, 72, 76, 81, 86, 95, 101, 107, 111, 115, 118, 123, 128, 133, 137, 138, 140, 145, 154, 176, 187, 202};
 
 static float CHAR_MAP[COORD_AMOUNT][2] = {
   {0.0, 0.125}, {0.5, 0.875}, {1.0, 0.125},  {0.75, 0.5},   {0.25, 0.5},                                                                                          //A[6] (0-4)
@@ -111,9 +111,16 @@ static float CHAR_MAP[COORD_AMOUNT][2] = {
   {0.0, 0.875}, {0.25, 0.125},{0.5, 0.5},    {0.75, 0.125}, {1.0, 0.875},                                                                                         //W[5] (118-122)
   {0.0, 0.875}, {1.0, 0.125}, {0.5, 0.5},    {0.0, 0.125},  {1.0, 0.875},                                                                                         //X[5] (123-127)
   {0.0, 0.875}, {0.5, 0.5},   {1.0, 0.875},  {0.5, 0.5},    {0.5, 0.125},                                                                                         //Y[5] (128-132)
-  {1.0, 0.125}, {0.0, 0.125}, {1.0, 0.875},  {0.0, 0.875}                                                                                                         //Z[4] (133-136)
+  {1.0, 0.125}, {0.0, 0.125}, {1.0, 0.875},  {0.0, 0.875},                                                                                                        //Z[4] (133-136)
+  {0.0, 0.0},                                                                                                                                                     //Leerzeichen[1](137)
+  {0.25, 0.5}, {0.75, 0.5},                                                                                                                                       //-[2](138-139)
+  {0.375, 0.125}, {0.675, 0.125}, {0.675, 0.25}, {0.375, 0.25}, {0.375, 0.125},                                                                                   //.[5](140-144)
+  {0.5, 0.25}, {1, 0.5},{1, 0.625}, {0.75, 0.75}, {0.5, 0.625}, {0.25, 0.75}, {0.0, 0.625}, {0.0, 0.5}, {0.5, 0.25},                                              //Herz [9] (145-153)
+  {0.25, 0.875}, {0.75, 0.625}, {0.75, 0.5625}, {0.625, 0.5625}, {0.625, 0.625}, {0.75, 0.625}, {1.0, 0.5}, {0.5, 0.25}, {0.25, 0.375}, {0.5, 0.375}, { 0.75, 0.5}, {0.5, 0.375}, {0.25, 0.375}, {0.0, 0.5}, {0.25, 0.625}, {0.25, 0.5625}, {0.375, 0.5625}, {0.375, 0.625}, {0.25, 0.625}, {0.75, 0.875}, {0.5, 0.75}, {0.5, 0.875}, //Smiley[22] 154-175
+  {0.0, 0.375}, {0.875, 0.375}, {0.6875, 0.375}, {0.625, 0.25}, {0.875, 0.75}, {0.8125, 0.625}, {1.0, 0.625}, {0.125, 0.625}, {0.3125, 0.625}, {0.375, 0.75}, {0.125, 0.25}, //# [11] 176-186
+  {1.0, 0.125 }, {0.25, 0.125}, {0.0, 0.25}, {0.0, 0.5}, {0.25, 0.625}, {0.75, 0.625}, {1.0, 0.5}, {1.0, 0.25}, {0.375, 0.25}, {0.25, 0.3125}, {0.25, 0.4375}, {0.375, 0.5}, {0.625, 0.5}, {0.75, 0.4375}, {0.75, 0.1875},//@ [15] (187-201)
+  {1.0,0.125},{0.125,0.625},{0.125,0.75},{0.375, 0.875},{0.625,0.875},{0.875,0.75},{0.875,0.625},{0.625,0.5},{0.375,0.5},{0.125, 0.375,},{0.125,0.25},{0.375,0.125},{0.75,0.125},{1.0,0.25}//& [14](202-215)
 };
-
 
 static float positionX = 0.0f;
 static float positionY = 0.0f;
@@ -136,34 +143,44 @@ void setup() {
   pinMode(X_SENSOR, INPUT);
   pinMode(Y_SENSOR, INPUT);
   pinMode(Z_SENSOR, INPUT);
+  pinMode(Door, INPUT);
 
   X_STEPPER_MOTOR.setMaxSpeed(MOVE_STEP_SPEED);
   Y_STEPPER_MOTOR.setMaxSpeed(MOVE_STEP_SPEED);
 
   // startCommandInputListener();
-  // calibrateDrillDistance();
+  calibrateDrillDistance();
 
   // REMOVE ME!
-  moveDrillHeight(DRILL_STEP_START_UP);
+  //moveDrillHeight(DRILL_STEP_START_UP);
 }
 
 void loop() {
   // Setup
-  String s = getUserName();
-  s.trim();
-  Serial.println(s);
-  char* chars = new char[s.length() + 1];
-  strcpy(chars, s.c_str());
-  moveToPlexiStart();
+    while (digitalRead(Door) == 0 && prev == 1) {
+      delay(10);
+      }
+    if (digitalRead(Door) == 1) {
+    String s = getUserName();
+    s.trim();
+    char* chars = new char[s.length() + 1];
+    strcpy(chars, s.c_str());
+    //calibrateDrillDistance();
+    moveToPlexiStart();
  
-  //Main
-  drillUserName(chars, s.length());
-  drillLogo();
+    //Main
+    drillUserName(chars, s.length());
+    drillLogo();
  
-  // Finish
-  delay(2000);
-  moveToAusgabe();
-  delay(2000);
+    // Finish
+    delay(2000);
+    moveToAusgabe();
+    delay(2000);
+    // Warte, bis der Taster losgelassen wird
+    
+  }
+
+
 }
 
 
@@ -178,10 +195,21 @@ void writeBT(String str) {
 }
 
 float** charTooCoords(char c) {
-  int asciiChar = (int)c;
-  uint charIndex = asciiChar - 65;  // 'A' -> Index: 0
-
-  uint startIndex = CHAR_INDEXES[charIndex];
+  // int asciiChar = (int)c;
+  // uint charIndex = asciiChar - 65;  // 'A' -> Index: 0
+int foundInd = -1;
+  for(int i = 0; i <= sizeof(CHAR_IND_ARR); i++){
+    if(CHAR_IND_ARR[i] == c){
+      Serial.println(i);
+      Serial.println(CHAR_IND_ARR[i]);
+      foundInd = i;
+      break;
+    }
+  }
+  uint startIndex = CHAR_INDEXES[foundInd];
+  Serial.println(startIndex);
+    // Hier können Sie startIndex verwenden oder weiteren Code hinzufügen.
+  
   uint endIndex = startIndex + getCoordLength(c);
   float** charCoords = new float*[endIndex - startIndex];
 
@@ -193,15 +221,32 @@ float** charTooCoords(char c) {
 }
 
 uint getCoordLength(char c) {
-  int asciiChar = (int)c;
-  uint charIndex = asciiChar - 65;  // 'A' -> Index: 0
+ // int asciiChar = (int)c;
+  //uint charIndex = asciiChar - 65;  // 'A' -> Index: 0
+  int foundInd = -1;
+  for(int i = 0; i <= sizeof(CHAR_IND_ARR); i++){
+    if(CHAR_IND_ARR[i] == c){
+      Serial.println(i);
+      Serial.println(CHAR_IND_ARR[i]);
+      foundInd = i;
+      break;
+    }
+  }
+  uint startIndex = CHAR_INDEXES[foundInd];
+  Serial.println(startIndex);
+    // Hier können Sie startIndex verwenden oder weiteren Code hinzufügen.
+  
+  //uint charIndex = 
 
-  uint startIndex = CHAR_INDEXES[charIndex];
+  // uint startIndex = CHAR_INDEXES[foundInd];
+  
   uint endIndex;
-  if (charIndex >= (CHAR_AMOUNT - 1)) {
+  if (foundInd >= (CHAR_AMOUNT - 1)) {
     endIndex = COORD_AMOUNT;
+    Serial.println(endIndex);
   } else {
-    endIndex = CHAR_INDEXES[charIndex + 1];
+    endIndex = CHAR_INDEXES[foundInd + 1];
+    Serial.println(endIndex);
   }
 
   return (endIndex - startIndex);
@@ -283,10 +328,19 @@ void drillLogo() {
   uint textHeightSteps = (uint)((LOGO_SIZE_MM * STEPS_PER_MM) - squareHeightSteps);
 
   moveToOnBoard(1 - LOGO_RIGHT, LOGO_TOP);
+  while (digitalRead(Door) == 0 && prev == 1) {
+      delay(10);
+      }
+  if(digitalRead(Door == 1)){
   drillSquare(squareHeightSteps, squareWidthSteps, textHeightSteps);
-
+  }
   moveSteps(-squareWidthSteps, 120, MOVE_STEP_SPEED);
+  while (digitalRead(Door) == 0 && prev == 1) {
+      delay(10);
+      }
+  if(digitalRead(Door == 1)){
   drillLogoTitle(squareWidthSteps, textHeightSteps);
+  }
 }
 
 void drillSquare(uint squareHeightSteps, uint squareWidthSteps, uint textHeightSteps) {
@@ -367,10 +421,21 @@ void logoDrillChar(char c, uint charWidthSteps, uint charHeightSteps) {
 void drillUserName(char* name, int nameLen) {
   float* charStartingPoints = firstboxGerade(nameLen);
   float scale = breiteBox(nameLen) / 7.0f;
-  moveToOnBoard(0.5, 0.5);
+  //moveToOnBoard(0.5, 0.5);
+  int SD = true;
   startDrill();
 
   for (int i = 0; i < nameLen; i++) {
+     while (digitalRead(Door) == 0 && prev == 1) {
+      delay(10);
+      stopDrill();
+      SD = false;
+      }
+    if(digitalRead(Door == 1)){
+    if(SD == false){
+      startDrill();
+      SD = true;
+    }
     char c = name[i];
     float charStart = charStartingPoints[i];
 
@@ -384,6 +449,7 @@ void drillUserName(char* name, int nameLen) {
     finishedCharBTData.concat("\n");
     writeBT(finishedCharBTData);
     delay(500);
+    }
   }
 
   stopDrill();
@@ -397,7 +463,7 @@ void drillUserName(char* name, int nameLen) {
 
 void drillChar(char c, float scale) {
   Serial.println(c);
-
+  
   // Get the (0 0) coords of the char field.
   // Get scaling factor of char fields
   // Christophs functions
@@ -419,15 +485,22 @@ void drillChar(char c, float scale) {
 
     posCharX = xCoord;
     posCharY = yCoord;
-
-    if (i == 0) {
+    // if(c == ' '){
+    //   moveDrillHeight(-DRILL_STEP_DOWN);
+    //   Serial.println("test");
+    // }
+    if (i == 0 && c != ' ') {
       moveDrillHeight(DRILL_STEP_DOWN);
       delay(500);
     }
+    
   }
 
   delay(200);
-  moveDrillHeight(-DRILL_STEP_DOWN);
+  if (c != ' ') {
+      moveDrillHeight(-DRILL_STEP_DOWN);
+      delay(500);
+    }
   delay(500);
   // Reset to bottom right corner
   moveRelativeInCharField((1.0 - posCharX), -posCharY);
@@ -445,6 +518,7 @@ String getUserName() {
     String s = SerialBT.readString();
     if (s.endsWith(String(BT_USER_NAME_END_TOKEN))) {
       s.remove(s.length() - 1);
+      Serial.println(s);
       return s;
     }
   }
@@ -554,7 +628,7 @@ void moveToPlexiStart() {
 
 void moveToPlexiX() {
   // (V-------V) Magic values
-  float stepszuplexiX = 2.65 * 100;
+  float stepszuplexiX = 4.65 * 100;
   moveSteps(stepszuplexiX, 0, MOVE_STEP_SPEED);
 }
 
@@ -573,7 +647,7 @@ void moveToAusgabe() {
   delay(1000);
 
   // (V-------V) Magic values
-  float ausgabe_y = 140 * 100;
+  float ausgabe_y = 120 * 100;
   float ausgabe_x = 33 * 100;
   moveSteps(ausgabe_x, 0, MOVE_STEP_SPEED);
   moveSteps(0, ausgabe_y, MOVE_STEP_SPEED);
@@ -624,13 +698,27 @@ void calibrateDrillDistance() {
 
   // Move to the Z Sensor placed on the plate
   // Note; I'm moving the plate here using "#moveSteps", having a precise home-point is crucial!
-  moveSteps(DRILL_SENSOR_X_STEPS, DRILL_SENSOR_Y_STEPS, MOVE_STEP_SPEED);
+  moveSteps((DRILL_SENSOR_X_STEPS/2), 0, MOVE_STEP_SPEED);
+  moveSteps(0, DRILL_SENSOR_Y_STEPS, MOVE_STEP_SPEED);
+  moveSteps((DRILL_SENSOR_X_STEPS/2), 0, MOVE_STEP_SPEED);
   delay(500);
-
-  moveToSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveFromSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED);
-  moveToSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
-  moveFromSensor(&Z_STEPPER_MOTOR, Z_SENSOR, MOTOR_SLOW_STEP_SPEED / MOTOR_SLOW_STEP_FACTOR);
+  Serial.println("s");
+  digitalWrite(Z_MOTOR_DIR_PIN, HIGH);
+  while(digitalRead(Z_SENSOR) == 0){
+    digitalWrite(Z_MOTOR_STEP_PIN, HIGH);
+    delayMicroseconds(10000);
+    digitalWrite(Z_MOTOR_STEP_PIN, LOW);
+    delayMicroseconds(10000);
+    }
+  Z_STEPPER_MOTOR.setPinsInverted(true, true, false);
+  digitalWrite(Z_MOTOR_DIR_PIN, LOW);
+  for(int u = 0; u > DRILL_STEP_START_UP; u--){
+    digitalWrite(Z_MOTOR_STEP_PIN, HIGH);
+    delayMicroseconds(10000);
+    digitalWrite(Z_MOTOR_STEP_PIN, LOW);
+    delayMicroseconds(10000);
+  }
+  
 }
 
 void moveDrillHeight(int steps) {
